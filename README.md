@@ -14,5 +14,5 @@ A little Sun. A world worth carrying.
 Play alone, choose optional AI Keepers, or share your crew link with friends.
 Move with WASD, take a rope with F, and use Q / E / R powers.
 
-Build: 07a4f2c. This repository contains only the prebuilt jam runtime.
+Build: ac6ac00. This repository contains only the prebuilt jam runtime.
 Credits and asset licences: dist/CREDITS.md and dist/licenses/.

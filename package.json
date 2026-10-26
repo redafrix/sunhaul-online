@@ -1,0 +1,34 @@
+{
+  "name": "sunhaul",
+  "version": "4.0.0",
+  "private": true,
+  "description": "SUNHAUL — Keepers of the Dawn",
+  "type": "module",
+  "scripts": {
+    "start": "NODE_ENV=production node server/index.js"
+  },
+  "dependencies": {
+    "@dimforge/rapier2d-compat": "^0.21.0",
+    "compression": "^1.8.2",
+    "express": "^5.1.0",
+    "n8ao": "^2.0.1",
+    "postprocessing": "^6.39.5",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "vite": "^6.4.1",
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "sharp": "^0.35.5",
+    "meshoptimizer": "^1.3.0"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "build": "f22d85f"
+}

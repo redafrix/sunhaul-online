@@ -1,0 +1,12 @@
+# Free backup host for the same prebuilt Docker runtime.
+services:
+  - type: web
+    name: sunhaul-online
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    numInstances: 1
+    envVars:
+      - key: PORT
+        value: "7860"

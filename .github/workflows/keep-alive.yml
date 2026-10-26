@@ -1,0 +1,16 @@
+# Warm both free public endpoints; a sleeping or unconnected host is tolerated.
+name: Keep SUNHAUL awake
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake public game servers
+        run: |
+          curl -fsS --retry 1 --max-time 50 https://maximusprimessx-sunhaul.hf.space/health || true
+          curl -fsS --retry 1 --max-time 50 https://sunhaul-online.onrender.com/health || true

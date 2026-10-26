@@ -6,16 +6,16 @@ export class Shades {
  constructor(game){this.shades=[];this.deaths=[];this.webs=[];this.random=seeded(game.recipe.seed+47);this.serial=0;this.spawns=(game.recipe.shadeSpawns||[]).map(s=>({...s,next:1}));game.shades=this.shades;game.webs=this.webs;}
  spawn(game,type,x,z,zone){const st=stats[type]||stats.wisp,shade={id:`shade-${++this.serial}`,type,x,z,home:{x,z},hp:st.hp,maxHP:st.hp,vx:0,vz:0,facing:{x:0,z:1},zone,stunUntil:0,flying:type==='moth'};game.physics.addPlayer(shade,st.radius,true);shade.controller.setApplyImpulsesToDynamicBodies(false);if(type==='wisp'||type==='moth')shade.collider.setSensor(true);this.shades.push(shade);return shade;}
  command(game,p,cmd) {
-  if(cmd==='attack'&&game.time>=(p.attackReady||0)&&!(p.downedUntil>game.time)){p.attackReady=game.time+.55;for(const s of this.shades)if(distance(p,s)<2.8){s.hp-=s.type==='brute'?2:18;s.stunUntil=Math.max(s.stunUntil,game.time+.15);}for(const w of this.webs)if(distance(p,w)<3)w.hp-=18;}
+  if(cmd==='attack'&&game.time>=(p.attackReady||0)&&!(p.downedUntil>game.time)){p.attackReady=game.time+.55;for(const s of this.shades)if(distance(p,s)<2.8){s.hp-=s.type==='brute'?12:18;p.stats??={ropeTime:0,strikes:0,powers:0};p.stats.strikes++;s.stunUntil=Math.max(s.stunUntil,game.time+.15);}for(const w of this.webs)if(distance(p,w)<3)w.hp-=18;}
   if(cmd==='use'||cmd==='interact'){const ally=[...game.players.values()].find(a=>a.id!==p.id&&(!p.team||a.team===p.team)&&a.downedUntil>game.time&&distance(p,a)<2.5);if(ally){ally.hp=60;ally.downedUntil=0;game.teamwork?.(15);}}
  }
  before(game,dt) {
   const sun=game.physics.snapshot().sun,radius=game.sun?.radius||18,gentle=game.difficulty==='gentle';
-  for(const spawn of this.spawns){const zoneIndex=game.recipe.mission?.zoneOrder?.indexOf(spawn.zone)??0;if(zoneIndex>(game.restored||[]).length)continue;if((game.restored||[]).some(z=>z.id===spawn.zone)||game.time<spawn.next)continue;spawn.next=game.time+(spawn.interval||40);const count=Math.max(1,Math.ceil((spawn.count||5)*game.rules.shadeCount));for(let i=0;i<count&&this.shades.length<48;i++){const a=this.random()*Math.PI*2,r=this.random()*(spawn.radius||3),x=spawn.p[0]+Math.cos(a)*r,z=spawn.p[1]+Math.sin(a)*r;if(terrainHeight(game.recipe,x,z)>(game.recipe.water?.level??-1))this.spawn(game,game.difficulty==='eclipse'&&i%3===0?'brute':game.difficulty==='veteran'&&spawn.type==='wisp'&&i%2===0?'lurker':spawn.type,x,z,spawn.zone);}}
+  for(const spawn of this.spawns){const zoneIndex=game.recipe.mission?.zoneOrder?.indexOf(spawn.zone)??0;if(zoneIndex>(game.restored||[]).length)continue;if((game.restored||[]).some(z=>z.id===spawn.zone)||game.time<spawn.next)continue;spawn.next=game.time+(spawn.interval||40);const count=Math.max(1,Math.ceil((spawn.count||5)*game.rules.shadeCount*(.7+.3*game.keeperCount())));for(let i=0;i<count&&this.shades.length<48;i++){const a=this.random()*Math.PI*2,r=this.random()*(spawn.radius||3),x=spawn.p[0]+Math.cos(a)*r,z=spawn.p[1]+Math.sin(a)*r;if(terrainHeight(game.recipe,x,z)>(game.recipe.water?.level??-1))this.spawn(game,game.difficulty==='eclipse'&&i%3===0?'brute':game.difficulty==='veteran'&&spawn.type==='wisp'&&i%2===0?'lurker':spawn.type,x,z,spawn.zone);}}
   if(game.sun?.radiance===0&&game.tick%180===0&&this.shades.length<48){const a=this.random()*Math.PI*2;this.spawn(game,'wisp',sun.x+Math.cos(a)*radius*1.3,sun.z+Math.sin(a)*radius*1.3);}
-  for(const p of game.players.values()){p.hp??=100;if(p.hp<=0&&!(p.downedUntil>0)){p.downedUntil=game.time+8;p.rope.attached=false;}
-   if(p.downedUntil>game.time){p.input={x:0,z:0};p.vx=p.vz=0;}
-   else if(p.downedUntil){const ownSun=game.sunPositionFor(p),at=game.checkpoint||{x:ownSun.x+2,z:ownSun.z+2};p.body.setTranslation({x:at.x+2,y:at.z+2},true);p.hp=60;p.downedUntil=0;game.physics.sync(p);}
+  for(const p of game.players.values()){p.hp??=100;if(p.hp<=0&&!(p.downedUntil>0)){p.downedUntil=game.time+(game.keeperCount()===1?3:8);p.rope.attached=false;}
+   if(p.downedUntil>game.time||p.downedUntil&&game.difficulty==='eclipse'){p.input={x:0,z:0};p.vx=p.vz=0;}
+   else if(p.downedUntil&&game.difficulty!=='eclipse'){const ownSun=game.sunPositionFor(p),at=game.safeSpawn(ownSun);p.body.setTranslation({x:at.x,y:at.z},true);p.hp=60;p.downedUntil=0;game.physics.sync(p);}
   }
   for(const s of this.shades){const nearestSun=game.recipe.mode==='sun-race'?['dawn','dusk'].map(team=>({team,...game.sunPositionFor({team})})).sort((a,b)=>distance(s,a)-distance(s,b))[0]:null,sun=nearestSun||game.sunPositionFor(),sunState=game.sunStateFor(nearestSun),radius=sunState.radius||18;if(s.hp<=0){s.vx=s.vz=0;continue;}if(s.knockUntil>game.time){game.physics.move(s,{x:s.knock.x*dt,z:s.knock.z*dt});continue;}if(s.stunUntil>game.time){s.vx=s.vz=0;continue;}
    if(s.type==='weaver'&&game.time>=(s.webAt??game.time)){s.webAt=game.time+16;this.spin(game,s);}
@@ -34,9 +34,9 @@ export class Shades {
    s.vx=dx/len*speed;s.vz=dz/len*speed;s.facing={x:dx/len,z:dz/len};game.physics.move(s,{x:s.vx*dt,z:s.vz*dt});
    if((s.type!=='brute'||s.wave)&&d<radius&&game.physics.lineOfSight(sun,s))s.hp-=dt*(s.boss?5:s.type==='brute'?8:s.type==='wisp'?24:s.type==='moth'?.8:s.type==='weaver'?6:12);
    const bastion=game.effects?.some(e=>e.kind==='bastion'&&e.until>game.time&&distance(sun,e)<e.radius);
-   if(d<2.2&&!bastion)sunState.radiance=Math.max(0,sunState.radiance-dt*(s.type==='brute'?7:4)*game.rules.sunDamage*(gentle?0:1));
+   if(d<2.2&&!bastion)sunState.radiance=Math.max(0,sunState.radiance-dt*(s.type==='brute'?6:3)*game.rules.sunDamage*game.rules.shadeDamage*(.8+.2*game.keeperCount())*(gentle?.35:1));
    const frontBlocked=nearest?.frontShieldUntil>game.time&&((s.x-nearest.x)*nearest.facing.x+(s.z-nearest.z)*nearest.facing.z)/(distance(s,nearest)||1)>.2;
-   if(nearest&&distance(s,nearest)<(s.type==='brute'?2:1.1)&&!(nearest.dodgeUntil>game.time)&&!(nearest.shieldUntil>game.time)&&!frontBlocked)nearest.hp-=dt*(s.type==='brute'?20:9)*game.rules.shadeDamage;
+   if(nearest&&distance(s,nearest)<(s.type==='brute'?2:1.1)&&!(nearest.dodgeUntil>game.time)&&!(nearest.shieldUntil>game.time)&&!frontBlocked)nearest.hp-=dt*(s.type==='brute'?20:9)*game.rules.shadeDamage*(.8+.2*game.keeperCount());
    for(const beam of game.beams||[])if(segmentDistance(s.x,s.z,[beam.a.x,beam.a.z],[beam.b.x,beam.b.z])<1.1)s.hp-=dt*(s.type==='brute'?45:65);
    for(const effect of game.effects||[])if(effect.until>game.time&&['bastion','grove'].includes(effect.kind)&&distance(s,effect)<effect.radius){s.stunUntil=game.time+.2;s.vx=s.vz=0;}
   }

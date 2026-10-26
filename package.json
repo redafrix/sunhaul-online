@@ -30,5 +30,5 @@
   "engines": {
     "node": ">=22 <25"
   },
-  "build": "f22d85f"
+  "build": "abf532d"
 }

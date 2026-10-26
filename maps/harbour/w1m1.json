@@ -149,14 +149,14 @@
   "entities": [
     {"type":"sunSpawn","p":[0,12]},
     {"type":"heroSpawn","p":[2,14]},
-    {"type":"cradle","id":"first-light","p":[0,0],"restores":"zone_quay","links":["quay-road-gate"]},
+    {"type":"cradle","id":"first-light","p":[0,0],"restores":"zone_quay","links":["quay-road-gate"],"chargeSeconds":40},
     {"type":"capstan","id":"capstan-quay","p":[-18,9]},
     {"id":"quay-well","type":"well","p":[0,14],"radius":3.5},
     {"id":"quay-road-gate","type":"gate","p":[-3,-37],"block":[5.5,0.45],"asset":"village/Wall_Plaster_Straight","scale":5,"label":"North road"},
-    {"id":"harbour-capstan","type":"capstan","p":[-1,-55],"ropeRoute":["capstan-post-1","capstan-post-2"],"turns":3,"links":["market-bridge"],"label":"Dawn Capstan","hint":"Wrap post I, then II under tension. Turn the capstan three times."},
+    {"id":"harbour-capstan","type":"capstan","p":[-1,-55],"turns":3,"links":["market-bridge"],"label":"Dawn Capstan","hint":"Bring the Sun close. Interact to wind the capstan.","windSeconds":30},
     {"id":"post-I","type":"hook","p":[-3,-49],"scale":0.01,"label":"I","hint":"Circle post I with a taut rope; then circle II."},
     {"id":"post-II","type":"hook","p":[-5.2,-51.2],"scale":0.01,"label":"II","hint":"The second turn sends dawn across the drawbridge."},
-    {"id":"market-cradle","type":"cradle","p":[0,-59],"restores":"zone_market","requires":["first-light","harbour-capstan"],"label":"Market Hearth"},
+    {"id":"market-cradle","type":"cradle","p":[0,-59],"restores":"zone_market","requires":["first-light","harbour-capstan"],"label":"Market Hearth","chargeSeconds":60},
     {"id":"market-well","type":"well","p":[-6,-56],"radius":4,"label":"Sun Well"},
     {"id":"market-bridge","type":"drawbridge","p":[0,-68],"block":[6,0.55],"asset":"pirate/Environment_Dock","scale":1.2,"requires":["first-light","harbour-capstan"],"label":"Dawn Drawbridge"},
     {"id":"market-valve","type":"valve","p":[-10,-63],"links":["market-waterwheel"],"label":"Sluice Valve"},
@@ -164,7 +164,7 @@
     {"id":"market-winch","type":"winch","p":[-5,-62],"label":"Harbour Winch"},
     {"id":"beacon-mirror","type":"mirror","target":"beacon-receiver","p":[-6,-86],"angle":-1.0471975511965976,"range":20,"label":"Harbour Mirror","hint":"Turn the mirror toward the golden receiver. Its beam burns the Brute."},
     {"id":"beacon-receiver","type":"receiver","source":"beacon-mirror","p":[8,-86],"label":"Beacon Receiver"},
-    {"id":"dawn-lens","type":"cradle","p":[0,-98],"restores":"zone_lighthouse","requires":["market-cradle","beacon-receiver"],"label":"Lighthouse Lens","hint":"Bring the sun into the lens. Light the entire lighthouse."},
+    {"id":"dawn-lens","type":"cradle","p":[0,-98],"restores":"zone_lighthouse","requires":["market-cradle","beacon-receiver"],"label":"Lighthouse Lens","hint":"Bring the sun into the lens. Light the entire lighthouse.","chargeSeconds":75},
     {"id":"headland-well","type":"well","p":[-8,-80],"radius":4,"label":"Dawn Well"},
     {"id":"shadow-lock","type":"shadowLock","p":[12,24],"statue":[12,24],"glyph":[12,29],"tolerance":0.85,"scale":1.8,"label":"Shadow Lock","hint":"Set the sun north of the statue. Let its shadow cover the gold glyph."},
     {"id":"dock-cache","type":"plate","p":[-23,9],"radius":1.25,"count":1,"asset":"village/Prop_Crate","scale":0.05,"label":"Dawn Cache","hint":"Leave a crate or ping a Keeper onto this plate."},
@@ -181,22 +181,22 @@
     {"id":"zone_lighthouse","name":"Dawn Headland","poly":[[-26,-81],[29,-81],[32,-99],[18,-116],[-17,-116],[-29,-99]],"landmark":"harbour/Lighthouse","radius":26}
   ],
   "objectives": [
-    {"id":"first-light","title":"Wake the Bollard Quay","text":"Take a rope. Haul the sun to the gold cradle and interact.","done":"first-light.locked"},
-    {"id":"harbour-capstan","title":"The Dawn Capstan","text":"Follow the north road. Wrap posts I then II with a taut rope; turn the capstan three times.","done":"harbour-capstan.complete"},
-    {"id":"market-cradle","title":"Restore the Market","text":"Haul the sun to the Market Hearth. Light it, then cross the drawbridge.","done":"market-cradle.locked"},
+    {"id":"first-light","title":"Wake the Bollard Quay","text":"Haul into the cradle. Interact, then defend the charging Sun.","done":"first-light.locked"},
+    {"id":"harbour-capstan","title":"The Dawn Capstan","text":"Bring the Sun to the capstan. Interact, then defend its light.","done":"harbour-capstan.complete"},
+    {"id":"market-cradle","title":"Restore the Market","text":"Haul into the cradle. Interact, then defend the charging Sun.","done":"market-cradle.locked"},
     {"id":"beacon-receiver","title":"Burn a path to the lighthouse","text":"Aim the harbour mirror east at the receiver. The beam also burns the Brute.","done":"beacon-receiver.complete"},
-    {"id":"dawn-lens","title":"The lighthouse remembers","text":"Haul the sun to the lighthouse lens. Let the whole headland bloom.","done":"dawn-lens.locked"},
+    {"id":"dawn-lens","title":"The lighthouse remembers","text":"Haul into the cradle. Interact, then defend the charging Sun.","done":"dawn-lens.locked"},
     {"id":"shadow-lock","title":"Shadow-Lock secret","text":"A statue at the east quay hides a Dawn Shard.","flag":"shadow-lock","optional":true},
     {"id":"dock-cache","title":"Dock Cache secret","text":"A cargo plate hides a Dawn Shard at the west jetty.","flag":"dock-cache","optional":true}
   ],
   "shadeSpawns": [
-    {"p":[25,-18],"type":"wisp","count":5,"interval":65,"zone":"zone_quay"},
-    {"p":[18,-61],"type":"lurker","count":2,"interval":65,"zone":"zone_market"},
-    {"p":[-18,-73],"type":"wisp","count":6,"interval":75,"zone":"zone_market"},
-    {"p":[0,-86],"type":"brute","count":1,"interval":150,"zone":"zone_lighthouse"},
-    {"p":[18,-100],"type":"wisp","count":6,"interval":80,"zone":"zone_lighthouse"}
+    {"p":[-5,-13],"radius":1,"type":"lurker","count":2,"interval":40,"zone":"zone_quay"},
+    {"p":[8,-57],"type":"lurker","count":3,"interval":40,"zone":"zone_market"},
+    {"p":[-18,-73],"type":"wisp","count":6,"interval":40,"zone":"zone_market"},
+    {"p":[0,-86],"type":"brute","count":1,"interval":90,"zone":"zone_lighthouse"},
+    {"p":[-5,-96],"radius":1,"type":"lurker","count":3,"interval":40,"zone":"zone_lighthouse"}
   ],
-  "mission": {"finale":"dawn-lens","par":600,"secrets":["shadow-lock","dock-cache"],"zoneOrder":["zone_quay","zone_market","zone_lighthouse"]},
+  "mission": {"finale":"dawn-lens","par":420,"secrets":["shadow-lock","dock-cache"],"zoneOrder":["zone_quay","zone_market","zone_lighthouse"],"expectedMinutes":[4,7]},
   "dressing": {
     "props": [
       {"id":"b6-6","a":"pirate/Ship_Small","p":[-29,-1.35,20],"r":-15,"s":1.15,"collide":false}, {"id":"b6-7","a":"pirate/Ship_Small","p":[-29.5,-1.35,25],"r":24,"s":0.95,"collide":false},

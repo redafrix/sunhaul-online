@@ -43,7 +43,8 @@ export class Ropes {
    const r=p.rope,sun=game.sunPositionFor(p);if(r.fray>=1&&game.difficulty!=='gentle'){r.attached=false;r.snappedUntil=game.time+2;r.tension=0;continue;}
    const next=r.path[1],d=distance(sun,next)||1,stretch=Math.max(0,r.distance-r.length);let strength=Math.min(40,stretch*24)*(r.tangle?.5:1)*(1-r.fray*.35);
    if(p.hero==='mara'&&p.input.sprint)strength*=2;if(p.pullMultiplier)strength*=p.pullMultiplier;
-   strength*=p.racePull||1;game.sunBodyFor(p).applyImpulse({x:(next.x-sun.x)/d*strength*dt,y:(next.z-sun.z)/d*strength*dt},true);
+   const pullers=attached.filter(a=>a.team===p.team&&!a.rope.tied).length;
+   strength*=1/Math.sqrt(Math.max(1,pullers));strength*=p.racePull||1;game.sunBodyFor(p).applyImpulse({x:(next.x-sun.x)/d*strength*dt,y:(next.z-sun.z)/d*strength*dt},true);
   }
  }
 }

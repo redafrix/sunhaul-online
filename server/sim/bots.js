@@ -60,14 +60,26 @@ export class Bots {
    }p.botRole=task.type==='plate'?'Holding a plate':`Helping at ${game.recipe.entities.find(e=>e.id===task.id)?.label||task.type}`;}
    else if(p.delivery){p.botRole='Delivering cargo';const cargo=game.physics.snapshot().props.find(c=>c.id===p.delivery.prop);if(!cargo){p.delivery=null;p.cargoTow=null;}else if(distance(cargo,p.delivery.point)<2){p.delivery=null;p.cargoTow=null;}else if(p.cargoTow===cargo.id)target=p.delivery.point;else{target=cargo;if(distance(p,cargo)<2.6){p.cargoTow=cargo.id;p.rope.attached=false;}}if(p.rope.attached)commands.push('rope');}
    else if(game.boss?.active&&game.boss.exposed&&!game.boss.defeated&&game.boss.kind==='frostLeviathan'){target={x:game.boss.x+(i-1)*2,z:game.boss.z+4.5};if(p.rope.attached)commands.push('rope');if(distance(p,game.boss)<6)commands.push('attack');}
-   else if(leader.rope.attached&&!leader.rope.tied){p.botRole=p.rope.attached?'Hauling with you':'Taking a rope';if(p.rope.attached&&(Math.hypot(leader.input.x,leader.input.z)>.1||distance(leader,sun)>5))target={x:leader.x+(i-1)*1.2,z:leader.z+(i%2?1:-1)*1.1};}
+   else if(leader.rope.attached&&!leader.rope.tied){p.botRole=p.rope.attached?'Hauling with you':'Taking a rope';if(p.rope.attached&&(Math.hypot(leader.input.x,leader.input.z)>.1||distance(leader,sun)>5))target={x:leader.x,z:leader.z};}
    else if(shade&&distance(shade,sun)<7&&!p.rope.attached)target=shade;
    if(puzzle&&p!==rescuer&&!plate&&!task&&!p.delivery){target={x:sun.x+(i-1)*1.8,z:sun.z+3.5};p.botRole='Keeping the rope route clear';if(p.rope.attached)commands.push('rope');}
    if(!puzzle&&!task&&!plate&&!p.delivery&&p!==rescuer&&!(game.boss?.active&&game.boss.exposed&&game.boss.kind==='frostLeviathan')){if(leader.rope.attached&&!leader.rope.tied&&!p.rope.attached&&distance(p,sun)<3.5)commands.push('rope');else if(!leader.rope.attached&&p.rope.attached)commands.push('rope');}
+   if(!puzzle&&p.rope.attached&&p.rope.nodes?.length){commands.push('rope');const d=distance(leader,sun)||1;target={x:sun.x+(leader.x-sun.x)/d*2.3,z:sun.z+(leader.z-sun.z)/d*2.3};}
    if(p.rope.tangle||p.rope.fray>.8){if(p.rope.attached)commands.push('rope');target={x:sun.x+(i-1),z:sun.z+2};}
-   if(shade&&distance(p,shade)<2.8){commands.push('attack');if(['cone','area','dash'].includes(ABILITIES[p.hero].Q.type)&&!(p.cooldowns?.Q>game.time))commands.push('ability-Q');if(p.ultimate>=100)commands.push('ability-R');}
+   if(shade&&distance(p,shade)<2.8){commands.push('attack');if(['cone','area'].includes(ABILITIES[p.hero].Q.type)&&(distance(p,sun)>(ABILITIES[p.hero].Q.range||0)||(sun.x-p.x)*p.facing.x+(sun.z-p.z)*p.facing.z<0)&&!(p.cooldowns?.Q>game.time))commands.push('ability-Q');if(p.ultimate>=100)commands.push('ability-R');}
    let route=this.paths.get(p.id);if(!route||game.time>route.at+.7||distance(route.target,target)>3){route={target:{x:target.x,z:target.z},path:this.navigation.route(p,target),at:game.time};this.paths.set(p.id,route);}
    while(route.path.length>1&&distance(p,route.path[0])<.9)route.path.shift();const next=route.path[0]||target,dx=next.x-p.x,dz=next.z-p.z,d=Math.hypot(dx,dz);
+   const progress=p.botProgress;
+   if(!progress||distance(p,progress)>.4)p.botProgress={x:p.x,z:p.z,at:game.time};
+   else if(game.time-progress.at>4&&distance(p,target)>2){
+    const safe=game.safeSpawn(sun);
+    p.rope={attached:false,tension:0};
+    p.body.setTranslation({x:safe.x,y:safe.z},true);
+    p.body.setNextKinematicTranslation({x:safe.x,y:safe.z});
+    game.physics.sync(p);
+    p.botProgress={x:p.x,z:p.z,at:game.time};
+    this.paths.delete(p.id);
+   }
    const close=distance(p,target)<(plate||task?.type==='plate'?.45:task?1.5:.65),input={seq:Math.max(++this.seq,p.ack+1),x:close||d<.2?0:dx/d,z:close||d<.2?0:dz/d,sprint:!p.rope.attached&&distance(p,target)>7,commands:[...new Set(commands)]};game.input(p.id,input);
   });
  }

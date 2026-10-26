@@ -13,7 +13,8 @@ export class Abilities {
   if(cmd==='carry'&&p.hero==='brann'&&!(p.downedUntil>game.time)){this.carry(game,p);return;}
   let slot=cmd.startsWith('ability-')?cmd.slice(8).toUpperCase():null;if(cmd==='use'&&p.interactedAt!==game.time)slot='E';
   if(slot==='E'&&p.channel){this.command(game,p,'channel-stop');return;}
-  const spec=ABILITIES[p.hero]?.[slot];if(!spec||p.downedUntil>game.time)return;
+  const base=ABILITIES[p.hero]?.[slot],factor=game.difficulty==='gentle'?.8:game.difficulty==='eclipse'?1.15:1;
+  const spec=base?{...base,cooldown:(base.cooldown||1)*factor}:null;if(!spec||p.downedUntil>game.time)return;
   p.cooldowns??={};if(p.cooldowns[slot]>game.time||slot==='R'&&(p.ultimate||0)<100)return;
   if(spec.type==='channel'&&(sunState.radiance<1||distance(p,game.sunPositionFor(p))>sunState.radius)){p.hint='Stay in the Sun’s light to channel Sunlance.';return;}
   if(slot==='R')p.ultimate=0;p.cooldowns[slot]=game.time+(spec.cooldown||1);p.castAt=game.time;p.castSlot=slot;p.hint=null;

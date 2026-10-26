@@ -23,6 +23,7 @@ export class Machines {
   if(PUZZLE_TYPES.includes(e.type)||e.sequence){game.puzzles?.activate(game,p,e);return;}
   if(e.type==='cradle'){
    const sun=game.physics.snapshot().sun;if(distance(sun,s)>2.6||e.requires&&!e.requires.every(id=>this.states[id]?.complete||game.flags[id]))return;
+   if(e.chargeSeconds){s.active=true;return;}
    if(!s.locked){s.locked=s.complete=true;s.progress=1;game.systems.find(a=>a.restore)?.restore(game,e);game.teamwork?.(25);}return;
   }
   if(e.type==='shadowLock'||e.type==='receiver'||e.type==='plate')return;
@@ -62,12 +63,22 @@ export class Machines {
     s.progress=Math.min(1,s.progress+dt*.18*rate);const d=e.destination,from=s.carryFrom||s;game.physics.sunBody.setTranslation({x:from.x+(d[0]-from.x)*s.progress,y:from.z+(d[1]-from.z)*s.progress},true);game.physics.sunBody.setLinvel({x:0,y:0},true);s.complete=s.progress===1;if(s.complete)s.active=false;
    }else if(['crank','capstan'].includes(e.type)){
     if(e.ropeRoute){for(const p of game.players.values())if(p.rope.attached&&p.rope.tension>.12){const contacts=[...new Set((p.rope.nodes||[]).map(n=>n.id))];for(const id of contacts)if(id===e.ropeRoute[s.route.length])s.route.push(id);}}
-    s.progress=Math.min(1,s.turns/(e.turns||3));s.complete=s.progress>=1;
+    if(e.windSeconds){s.progress=Math.min(1,s.progress+(s.active&&s.powered?dt/e.windSeconds:0));}
+    else s.progress=Math.min(1,s.turns/(e.turns||3));s.complete=s.progress>=1;
    }else if(['lever','valve','sluiceGate'].includes(e.type)){s.progress=Math.max(0,Math.min(1,s.progress+dt*(s.active?1:-1)*rate));s.complete=s.progress>.95;
    }else if(['gate','drawbridge'].includes(e.type)){const open=s.driven||(s.active&&s.powered);s.progress=Math.max(0,Math.min(1,s.progress+dt*(open?.7:-.7)));s.complete=s.progress>.95;
    }else if(['mirror','prismSocket'].includes(e.type)){s.complete=s.active&&s.powered;
    }else if(e.type==='waterwheel'){s.progress=Math.min(1,s.progress+(s.driven||s.powered||s.tideUntil>game.time?dt*.4*rate:0));s.complete=s.progress>=1;
    }else if(e.type==='winch'){s.complete=s.active&&s.powered;}
+   if(e.type==='cradle'&&e.chargeSeconds&&s.active&&!s.locked){
+    const ready=(!e.requires||e.requires.every(id=>states[id]?.complete||flags[id]))&&distance(sun,s)<2.6;
+    if(ready){
+     game.physics.sunBody.setTranslation({x:s.x,y:s.z},true);
+     game.physics.sunBody.setLinvel({x:0,y:0},true);
+     s.progress=Math.min(1,s.progress+dt/e.chargeSeconds);
+    }
+    if(s.progress>=1){s.locked=s.complete=true;game.systems.find(a=>a.restore)?.restore(game,e);game.teamwork(25);}
+   }
    if(this.blockers.has(e.id))this.blockers.get(e.id).setEnabled(s.progress<.75);
   }
   for(const e of this.entities.filter(e=>['mirror','prismSocket'].includes(e.type))){const s=states[e.id];if(!s.powered&&!s.driven)continue;for(const angle of e.outputs||[0,...(e.type==='prismSocket'?[.38]:[])])this.beam(game,s,s.angle+angle,e.range||28,0);}

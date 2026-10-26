@@ -1,4 +1,4 @@
-// Only the approved jam mission is playable; optional harbour missions await J3.
+// The jam keeps M1; M2 failed its cargo-lift browser qualification.
 export const CAMPAIGN = [{id:'w1m1',world:'harbour',name:'First Light at the Quays'}];
 export const missionEntry = id => CAMPAIGN.find(m => m.id === id);
 export function nextMission(id) {

@@ -1,8 +1,8 @@
 export const DIFFICULTIES={
- gentle:{label:'Gentle',description:'No light drain · slow, sparse Shades · unbreakable rope · hints',drain:0,shadeSpeed:.65,shadeCount:.45,shadeDamage:.5,fray:.4,hints:true,night:0},
- adventure:{label:'Adventure',description:'The intended journey · normal Shades · rope frays and recovers',drain:.16,shadeSpeed:1,shadeCount:1,shadeDamage:1,fray:1,hints:true,night:0},
+ gentle:{label:'Story',description:'Slow light drain · weak, sparse Shades · unbreakable rope',drain:.04,shadeSpeed:.65,shadeCount:.45,shadeDamage:.45,fray:.4,hints:true,night:0},
+ adventure:{label:'Keeper',description:'Steady light drain · Shades bite ropes · cradles save progress',drain:.22,shadeSpeed:1,shadeCount:1,shadeDamage:.85,fray:1,hints:true,night:0},
  veteran:{label:'Veteran',description:'Aggressive Shades · fewer wells · faster drain and tangles',drain:.28,shadeSpeed:1.25,shadeCount:1.3,shadeDamage:1.3,fray:1.45,hints:false,night:0},
- eclipse:{label:'Eclipse',description:'Extinguishing the Sun ends the run · Brutes · night countdown',drain:.4,shadeSpeed:1.4,shadeCount:1.5,shadeDamage:1.5,fray:1.6,hints:false,night:900}
+ eclipse:{label:'Eclipse',description:'Extinguishing the Sun ends the run · Brutes · night countdown',drain:.5,shadeSpeed:1.3,shadeCount:1.65,shadeDamage:1.6,fray:1.6,hints:false,night:900}
 };
 export const MUTATORS={
  'heavy-sun':{label:'Heavy Sun',description:'The Sun weighs more than twice as much.'},

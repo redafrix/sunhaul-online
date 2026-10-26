@@ -40,7 +40,7 @@ export class Modes {
   }
   if(this.kind!=='last-light')return;
   if(this.state.phase==='intermission'&&game.time>=this.state.nextAt){
-   this.state.wave++;this.state.waveStartedAt=game.time;this.state.boss=null;this.state.phase='wave';const wave=this.state.wave,shades=game.systems.find(s=>s.spawn),count=Math.min(40,Math.max(2,Math.ceil((4+wave*2)*game.rules.shadeCount)));
+   this.state.wave++;this.state.waveStartedAt=game.time;this.state.boss=null;this.state.phase='wave';const wave=this.state.wave,shades=game.systems.find(s=>s.spawn),count=Math.min(40,Math.max(2,Math.ceil((4+wave*2)*game.rules.shadeCount*(.7+.3*game.keeperCount()))));
    for(let i=0;i<count;i++){const a=i/count*Math.PI*2+wave*.4,type=(game.difficulty==='eclipse'||wave>3)&&i%5===0?'brute':wave>2&&i%4===0?'moth':i%3===0?'lurker':'wisp';const s=shades.spawn(game,type,Math.cos(a)*37,Math.sin(a)*37,'hearth-zone');s.wave=wave;}
    if(wave%5===0){const boss=shades.spawn(game,'brute',0,-33,'hearth-zone');boss.boss=true;boss.name={harbour:'Tidewraith Echo',canopy:'Thorn Echo',frostveil:'Leviathan Echo',caldera:'Colossus Echo'}[game.recipe.world];boss.hp=boss.maxHP=240+wave*30;boss.wave=wave;boss.attackAt=game.time+5;this.state.boss=boss.id;}
   }
@@ -51,7 +51,7 @@ export class Modes {
  after(game,dt){
   if(this.kind==='last-light'){
    if(game.failed)this.state.phase='finished';
-   if(this.state.phase==='wave'&&!game.shades.length){this.state.phase='intermission';this.state.score+=this.state.wave*100;this.state.nextAt=game.time+18;game.sun.radiance=Math.min(100,game.sun.radiance+20);game.teamwork(30);}
+   if(this.state.phase==='wave'&&!game.shades.length){this.state.phase='intermission';this.state.score+=this.state.wave*100;this.state.nextAt=game.time+18;if(this.state.wave>=3){this.state.phase='finished';this.state.winner='keepers';this.state.finishedAt=game.time;}game.sun.radiance=Math.min(100,game.sun.radiance+20);game.teamwork(30);}
    if(this.state.phase==='wave'){game.sun.radiance=Math.max(0,game.sun.radiance-dt*(game.difficulty==='gentle'?0:.45)*game.rules.sunDamage);if(game.sun.radiance===0&&game.difficulty!=='gentle'){game.failed=true;this.state.phase='finished';}}
    this.state.alive=game.shades.length;this.state.nextIn=Math.max(0,this.state.nextAt-game.time);this.state.score+=(game.systems.find(s=>s.deaths)?.deaths||[]).filter(d=>d.at===game.time).length*10;
   }

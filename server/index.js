@@ -23,6 +23,7 @@ app.use(compression({threshold:1024,filter:(req,res)=>/^(text\/|application\/(js
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: { origin: '*' },
+  maxHttpBufferSize: 16384,
   // Repeated world snapshots compress well, especially on a phone uplink.
   perMessageDeflate: { threshold:1024 }
 });
@@ -32,8 +33,15 @@ const recipes=new Map(await Promise.all([...CAMPAIGN,...MODE_MAPS].map(async m=>
 const rooms=new Rooms(io,recipes.get('w1m1'),catalog,recipes);
 const tickSamples=[];
 const build=process.env.BUILD_SHA||await readFile(path.join(ROOT,'package.json'),'utf8').then(s=>JSON.parse(s).build||'dev');
-if(isProd)setInterval(()=>console.log(JSON.stringify({memory:process.memoryUsage(),tickMs:Math.max(0,...tickSamples)})),60000).unref();
-const ticker=setInterval(()=>{const started=performance.now();rooms.advance();tickSamples.push(performance.now()-started);if(tickSamples.length>180)tickSamples.shift();},1000/60);
+let tickCount=0,metricAt=performance.now(),cpuAt=process.cpuUsage();
+let metrics={cpuPercent:0,tickHz:60,rssMiB:0};
+setInterval(()=>{
+ const now=performance.now(),elapsed=now-metricAt,cpu=process.cpuUsage(cpuAt);
+ metrics={cpuPercent:Math.round((cpu.user+cpu.system)/elapsed)/10,tickHz:Math.round(tickCount/elapsed*10000)/10,rssMiB:Math.round(process.memoryUsage().rss/1048576)};
+ if(isProd)console.log(JSON.stringify({event:'server_metrics',rooms:rooms.rooms.size,...metrics,tickMs:Math.max(0,...tickSamples)}));
+ tickCount=0;metricAt=now;cpuAt=process.cpuUsage();
+},10000).unref();
+const ticker=setInterval(()=>{const started=performance.now();tickCount+=rooms.advance();tickSamples.push(performance.now()-started);if(tickSamples.length>180)tickSamples.shift();},1000/60);
 io.on('connection',socket=>rooms.attach(socket));
 app.get('/api/network',(_req,res)=>{const addresses=Object.values(networkInterfaces()).flat().filter(a=>a.family==='IPv4'&&!a.internal&&!a.address.startsWith('172.')&&!a.address.startsWith('100.'));res.json({host:addresses[0]?.address||'localhost',port:PORT});});
 
@@ -45,7 +53,7 @@ app.get('/api/maps/:world/:id',async(req,res)=>{
   res.json(recipe);
 });
 app.get('/api/adventure',(_req,res)=>res.json(CAMPAIGN));
-app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,build,phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
+app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,build,phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,...metrics,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
 if(!isProd){
  app.put('/api/maps/:world/:id',express.json({limit:'2mb'}),async(req,res)=>{
   try {

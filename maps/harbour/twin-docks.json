@@ -1,0 +1,763 @@
+{
+  "id": "twin-docks",
+  "world": "harbour",
+  "name": "Sun Race · Twin Docks",
+  "mode": "sun-race",
+  "subtitle": "Three roads · two crews · one dawn",
+  "intro": "Haul your team’s sun home. Strike near enemy ropes to cut them; E claims jungle shrines.",
+  "size": [
+    152,
+    128
+  ],
+  "seed": 505,
+  "lighting": "harbour_dawn",
+  "music": "harbour",
+  "terrain": {
+    "base": 0.8,
+    "noise": {
+      "amp": 0,
+      "freq": 0.05
+    },
+    "plateaus": [],
+    "paths": [
+      {
+        "pts": [
+          [
+            -65,
+            0
+          ],
+          [
+            -48,
+            -28
+          ],
+          [
+            0,
+            -28
+          ],
+          [
+            48,
+            -28
+          ],
+          [
+            65,
+            0
+          ]
+        ],
+        "w": 7,
+        "h": 0.85,
+        "mat": "cobble"
+      },
+      {
+        "pts": [
+          [
+            -65,
+            0
+          ],
+          [
+            -48,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            48,
+            0
+          ],
+          [
+            65,
+            0
+          ]
+        ],
+        "w": 7,
+        "h": 0.85,
+        "mat": "cobble"
+      },
+      {
+        "pts": [
+          [
+            -65,
+            0
+          ],
+          [
+            -48,
+            28
+          ],
+          [
+            0,
+            28
+          ],
+          [
+            48,
+            28
+          ],
+          [
+            65,
+            0
+          ]
+        ],
+        "w": 7,
+        "h": 0.85,
+        "mat": "cobble"
+      },
+      {
+        "pts": [
+          [
+            -40,
+            -14
+          ],
+          [
+            0,
+            -14
+          ],
+          [
+            40,
+            -14
+          ]
+        ],
+        "w": 2.8,
+        "h": 0.85,
+        "mat": "grass"
+      },
+      {
+        "pts": [
+          [
+            -40,
+            14
+          ],
+          [
+            0,
+            14
+          ],
+          [
+            40,
+            14
+          ]
+        ],
+        "w": 2.8,
+        "h": 0.85,
+        "mat": "grass"
+      }
+    ]
+  },
+  "water": {
+    "level": -1,
+    "style": "harbour"
+  },
+  "props": [
+    {
+      "id": "dawn-landmark",
+      "a": "harbour/Lighthouse",
+      "p": [
+        -65,
+        0.8,
+        -12
+      ],
+      "s": 0.85,
+      "r": 0,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster--42-0",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        -15,
+        0.8,
+        -42
+      ],
+      "s": 1,
+      "r": 0,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster--42-1",
+      "a": "nature/Bush_Common",
+      "p": [
+        -20,
+        0.8,
+        -39
+      ],
+      "s": 1.12,
+      "r": 30,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster--42-2",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        -25,
+        0.8,
+        -42
+      ],
+      "s": 1.24,
+      "r": 60,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster--42-3",
+      "a": "nature/Bush_Common",
+      "p": [
+        -30,
+        0.8,
+        -39
+      ],
+      "s": 1.3599999999999999,
+      "r": 90,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster-42-0",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        -15,
+        0.8,
+        42
+      ],
+      "s": 1,
+      "r": 0,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster-42-1",
+      "a": "nature/Bush_Common",
+      "p": [
+        -20,
+        0.8,
+        45
+      ],
+      "s": 1.12,
+      "r": 30,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster-42-2",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        -25,
+        0.8,
+        42
+      ],
+      "s": 1.24,
+      "r": 60,
+      "collide": false
+    },
+    {
+      "id": "dawn-cluster-42-3",
+      "a": "nature/Bush_Common",
+      "p": [
+        -30,
+        0.8,
+        45
+      ],
+      "s": 1.3599999999999999,
+      "r": 90,
+      "collide": false
+    },
+    {
+      "id": "dusk-landmark",
+      "a": "harbour/Lighthouse",
+      "p": [
+        65,
+        0.8,
+        -12
+      ],
+      "s": 0.85,
+      "r": 0,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster--42-0",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        15,
+        0.8,
+        -42
+      ],
+      "s": 1,
+      "r": 0,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster--42-1",
+      "a": "nature/Bush_Common",
+      "p": [
+        20,
+        0.8,
+        -39
+      ],
+      "s": 1.12,
+      "r": 30,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster--42-2",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        25,
+        0.8,
+        -42
+      ],
+      "s": 1.24,
+      "r": 60,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster--42-3",
+      "a": "nature/Bush_Common",
+      "p": [
+        30,
+        0.8,
+        -39
+      ],
+      "s": 1.3599999999999999,
+      "r": 90,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster-42-0",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        15,
+        0.8,
+        42
+      ],
+      "s": 1,
+      "r": 0,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster-42-1",
+      "a": "nature/Bush_Common",
+      "p": [
+        20,
+        0.8,
+        45
+      ],
+      "s": 1.12,
+      "r": 30,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster-42-2",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        25,
+        0.8,
+        42
+      ],
+      "s": 1.24,
+      "r": 60,
+      "collide": false
+    },
+    {
+      "id": "dusk-cluster-42-3",
+      "a": "nature/Bush_Common",
+      "p": [
+        30,
+        0.8,
+        45
+      ],
+      "s": 1.3599999999999999,
+      "r": 90,
+      "collide": false
+    },
+    {
+      "id": "jungle-rock--30--14",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        -30,
+        0.8,
+        -14
+      ],
+      "s": 1.8,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-tree--30--14",
+      "a": "pirate/Prop_Barrel",
+      "p": [
+        -33,
+        0.8,
+        -12
+      ],
+      "s": 1.1,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-rock--30-14",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        -30,
+        0.8,
+        14
+      ],
+      "s": 1.8,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-tree--30-14",
+      "a": "pirate/Prop_Barrel",
+      "p": [
+        -33,
+        0.8,
+        16
+      ],
+      "s": 1.1,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-rock-30--14",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        30,
+        0.8,
+        -14
+      ],
+      "s": 1.8,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-tree-30--14",
+      "a": "pirate/Prop_Barrel",
+      "p": [
+        33,
+        0.8,
+        -12
+      ],
+      "s": 1.1,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-rock-30-14",
+      "a": "pirate/Environment_Rock_3",
+      "p": [
+        30,
+        0.8,
+        14
+      ],
+      "s": 1.8,
+      "r": 0,
+      "collide": true
+    },
+    {
+      "id": "jungle-tree-30-14",
+      "a": "pirate/Prop_Barrel",
+      "p": [
+        33,
+        0.8,
+        16
+      ],
+      "s": 1.1,
+      "r": 0,
+      "collide": true
+    }
+  ],
+  "entities": [
+    {
+      "id": "dawn-sun",
+      "type": "sunSpawn",
+      "p": [
+        48,
+        0
+      ],
+      "team": "dawn"
+    },
+    {
+      "id": "dawn-spawn",
+      "type": "heroSpawn",
+      "p": [
+        49,
+        3
+      ],
+      "team": "dawn"
+    },
+    {
+      "id": "dawn-engine",
+      "type": "raceEngine",
+      "p": [
+        -65,
+        0
+      ],
+      "team": "dawn",
+      "label": "Dawn engine",
+      "asset": "fantasy/Cauldron"
+    },
+    {
+      "id": "dusk-sun",
+      "type": "raceSun",
+      "p": [
+        -48,
+        0
+      ],
+      "team": "dusk"
+    },
+    {
+      "id": "dusk-spawn",
+      "type": "heroSpawn",
+      "p": [
+        -49,
+        3
+      ],
+      "team": "dusk"
+    },
+    {
+      "id": "dusk-engine",
+      "type": "raceEngine",
+      "p": [
+        65,
+        0
+      ],
+      "team": "dusk",
+      "label": "Dusk engine",
+      "asset": "fantasy/Cauldron"
+    },
+    {
+      "id": "shrine--20--14",
+      "type": "raceShrine",
+      "p": [
+        -20,
+        -14
+      ],
+      "buff": "haul",
+      "label": "Haul shrine",
+      "asset": "fantasy/BookStand"
+    },
+    {
+      "id": "shrine-20--14",
+      "type": "raceShrine",
+      "p": [
+        20,
+        -14
+      ],
+      "buff": "haul",
+      "label": "Haul shrine",
+      "asset": "fantasy/BookStand"
+    },
+    {
+      "id": "shrine--20-14",
+      "type": "raceShrine",
+      "p": [
+        -20,
+        14
+      ],
+      "buff": "ward",
+      "label": "Ward shrine",
+      "asset": "fantasy/BookStand"
+    },
+    {
+      "id": "shrine-20-14",
+      "type": "raceShrine",
+      "p": [
+        20,
+        14
+      ],
+      "buff": "ward",
+      "label": "Ward shrine",
+      "asset": "fantasy/BookStand"
+    }
+  ],
+  "zones": [
+    {
+      "id": "dawn-zone",
+      "poly": [
+        [
+          -74,
+          -59
+        ],
+        [
+          0,
+          -59
+        ],
+        [
+          0,
+          59
+        ],
+        [
+          -74,
+          59
+        ]
+      ],
+      "radius": 65,
+      "landmark": "dawn-landmark",
+      "composition": {
+        "foreground": "borders and engine court",
+        "midground": "three connecting lanes and jungle shrines",
+        "background": "mirrored tall beacons"
+      }
+    },
+    {
+      "id": "dusk-zone",
+      "poly": [
+        [
+          0,
+          -59
+        ],
+        [
+          74,
+          -59
+        ],
+        [
+          74,
+          59
+        ],
+        [
+          0,
+          59
+        ]
+      ],
+      "radius": 65,
+      "landmark": "dusk-landmark",
+      "composition": {
+        "foreground": "borders and engine court",
+        "midground": "three connecting lanes and jungle shrines",
+        "background": "mirrored tall beacons"
+      }
+    }
+  ],
+  "scatterSets": {
+    "border": [
+      {
+        "a": "pirate/Environment_Rock_3",
+        "w": 2
+      },
+      {
+        "a": "nature/Bush_Common",
+        "w": 1
+      },
+      {
+        "a": "pirate/Prop_Barrel",
+        "w": 1
+      }
+    ]
+  },
+  "scatter": [
+    {
+      "set": "border",
+      "poly": [
+        [
+          -75,
+          -63
+        ],
+        [
+          75,
+          -63
+        ],
+        [
+          75,
+          63
+        ],
+        [
+          -75,
+          63
+        ]
+      ],
+      "count": 120,
+      "spacing": 2.6,
+      "scale": [
+        0.8,
+        1.3
+      ],
+      "clusters": [
+        [
+          -60,
+          -54
+        ],
+        [
+          -30,
+          -54
+        ],
+        [
+          0,
+          -54
+        ],
+        [
+          30,
+          -54
+        ],
+        [
+          60,
+          -54
+        ],
+        [
+          -60,
+          54
+        ],
+        [
+          -30,
+          54
+        ],
+        [
+          0,
+          54
+        ],
+        [
+          30,
+          54
+        ],
+        [
+          60,
+          54
+        ]
+      ],
+      "clusterRadius": 7,
+      "collide": false
+    }
+  ],
+  "clearings": [],
+  "objectives": [],
+  "shadeSpawns": [
+    {
+      "type": "lurker",
+      "p": [
+        0,
+        -14
+      ],
+      "radius": 3,
+      "count": 2,
+      "interval": 40
+    },
+    {
+      "type": "moth",
+      "p": [
+        0,
+        14
+      ],
+      "radius": 3,
+      "count": 2,
+      "interval": 40
+    }
+  ],
+  "borders": {
+    "dressed": true
+  },
+  "race": {
+    "duration": 480,
+    "engines": {
+      "dawn": [
+        -65,
+        0
+      ],
+      "dusk": [
+        65,
+        0
+      ]
+    },
+    "starts": {
+      "dawn": [
+        48,
+        0
+      ],
+      "dusk": [
+        -48,
+        0
+      ]
+    }
+  }
+}

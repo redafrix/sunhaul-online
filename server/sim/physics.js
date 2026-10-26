@@ -65,5 +65,13 @@ export class Physics {
   const t=this.sunBody.translation(),v=this.sunBody.linvel();
   return {sun:{x:t.x,z:t.y,vx:v.x,vz:v.y},props:[...this.props].map(([id,r])=>{const p=r.body.translation();return {id,x:p.x,z:p.y,angle:r.body.rotation(),asset:r.p.a,s:r.p.s,carriedBy:r.carriedBy||null};})};
  }
+ clearSpawn(p) {
+  for(const {collider} of this.solids.values()) {
+   if(!collider.isValid())continue;
+   const projection=collider.projectPoint({x:p.x,y:p.z},true);
+   if(projection.isInside||Math.hypot(projection.point.x-p.x,projection.point.y-p.z)<.48)return false;
+  }
+  return true;
+ }
  free(){this.world.free();}
 }

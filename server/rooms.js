@@ -29,9 +29,7 @@ export class Rooms {
   if(!seat&&room.game.players.size>=4){const bot=[...room.game.players.values()].find(p=>p.bot);if(bot)room.game.removePlayer(bot.id);}
   if(!seat&&room.game.players.size>=(room.game.recipe.mode==='sun-race'?room.game.teamSize*2:4))return ack({ok:false,error:'This crew has four Keepers.'});
   if(socket.data.room&&socket.data.room!==room.code)this.leave(socket,true);
-  let newcomer=false;
-  if(!seat){newcomer=true;const id=randomUUID();seat={id,token:randomUUID(),socketId:null};room.seats.set(id,seat);const player=room.game.addPlayer(id,{...data,team:undefined});player.connected=true;
-
+  if(!seat){const id=randomUUID();seat={id,token:randomUUID(),socketId:null};room.seats.set(id,seat);const player=room.game.addPlayer(id,{...data,team:undefined});player.connected=true;
   }
   if(seat.socketId&&seat.socketId!==socket.id){const old=this.io.sockets.sockets.get(seat.socketId);if(old){old.leave(room.code);old.leave(room.code+':live');old.data={};old.emit('session_replaced');}}
   seat.socketId=socket.id;seat.expires=null;room.lastActive=Date.now();socket.data={room:room.code,playerId:seat.id,ready:data.loading!==true,paused:false};socket.join(room.code);if(socket.data.ready)socket.join(room.code+':live');room.emptySince=null;
@@ -41,7 +39,6 @@ export class Rooms {
   room.game.setBots(room.game.recipe.mode?0:room.aiKeepers);
   ack({ok:true,room:room.code,playerId:seat.id,token:seat.token,seat:[...room.seats.keys()].indexOf(seat.id),...this.metadata(room)});
   socket.emit('snapshot',this.snapshot(room));this.io.to(room.code).emit('room_state',this.metadata(room));
-  if(newcomer&&room.seats.size>1)this.io.to(room.code).emit('crew_joined',{hero:HERO_DEFS[p.hero].name});
  }
  leave(socket,explicit=false) {
   const room=this.rooms.get(socket.data.room);if(!room)return;
@@ -89,6 +86,8 @@ export class Rooms {
    if(data.mode!==undefined&&!r.game.recipe.mode)r.mode=data.mode==='solo'?'solo':'coop';
    if(data.aiKeepers!==undefined)r.aiKeepers=data.aiKeepers;
    r.game.setBots(r.game.recipe.mode?0:r.aiKeepers);
+   const seat=r.seats.get(p.id);
+   if(!seat.announced){seat.announced=true;if(r.seats.size>1)this.io.to(r.code).emit('crew_joined',{hero:HERO_DEFS[p.hero].name});}
    this.io.to(r.code).emit('room_state',this.metadata(r));ack?.({ok:true,hero:p.hero});
   });
   listen('disconnect',()=>this.leave(socket));

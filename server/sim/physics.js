@@ -27,6 +27,11 @@ export class Physics {
   this.sunCollider=this.world.createCollider(RAPIER.ColliderDesc.ball(1.15).setMass(4).setFriction(.5).setRestitution(.08),this.sunBody);
   this.sunBodies={dawn:this.sunBody};
   const rival=recipe.entities.find(e=>e.type==='raceSun');if(rival){const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(...rival.p).setLinearDamping(2.4).setCcdEnabled(true));this.rivalCollider=this.world.createCollider(RAPIER.ColliderDesc.ball(1.15).setMass(4).setFriction(.5),body);this.sunBodies.dusk=body;}
+  // Only the Sun sees these invisible alley mouths; Keepers and Shades pass through.
+  this.sunBlockers = (recipe.sunBlockers || []).map(b => this.world.createCollider(
+   RAPIER.ColliderDesc.cuboid(...b.half).setTranslation(...b.p)
+    .setRotation((b.r || 0) * Math.PI / 180).setCollisionGroups(0x00080010)));
+  this.sunCollider.setCollisionGroups(0x0011000f);
   this.world.step();
  }
  addPlayer(player,radius=.38,shade=false) {
@@ -53,6 +58,16 @@ export class Physics {
   body.applyImpulse({x:-dx*5*dt,y:-dz*5*dt},true);
   if(this.game?.mutators.includes('wind-storm')){const t=this.game.time,sign=this.recipe.mode==='sun-race'&&team==='dusk'?-1:1;body.applyImpulse({x:Math.sin(t*.4)*1.8*dt*sign,y:Math.cos(t*.27)*1.8*dt*sign},true);}
   const state=this.game?.sunStateFor({team}),surface=terrainAt(this.recipe,p.x,p.y),frozen=state?.freezeUntil>this.game?.time&&!(state?.warmUntil>this.game?.time);body.setLinearDamping(frozen?12:surface==='ice'?.55:surface==='mud'?4.5:surface==='water'?3.8:2.4);}
+  const sunAt = this.sunBody.translation();
+  for (const b of this.sunBlockers) {
+   const hit = b.projectPoint(sunAt, false);
+   const dx = hit.point.x - sunAt.x, dz = hit.point.y - sunAt.y;
+   const d = Math.hypot(dx,dz);
+   if (d > 3 || d < .01) continue;
+   const velocity = this.sunBody.linvel();
+   const toward = (velocity.x*dx + velocity.y*dz)/d;
+   if (toward > 0) this.sunBody.applyImpulse({x:-dx/d*toward*12*dt,y:-dz/d*toward*12*dt},true);
+  }
   this.world.step();
  }
  floor(x,z){return worldHeight(this.recipe,x,z,this.game?.machines);}

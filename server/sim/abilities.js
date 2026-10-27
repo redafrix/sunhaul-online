@@ -1,3 +1,4 @@
+import {nearestEnemy} from './combat.js';
 import RAPIER from '@dimforge/rapier2d-compat';
 import { ABILITIES } from '../../shared/heroes.js';
 import { footprint } from '../../shared/physics-geometry.js';
@@ -17,6 +18,8 @@ export class Abilities {
   const spec=base?{...base,cooldown:(base.cooldown||1)*factor}:null;if(!spec||p.downedUntil>game.time)return;
   p.cooldowns??={};if(p.cooldowns[slot]>game.time||slot==='R'&&(p.ultimate||0)<100)return;
   if(spec.type==='channel'&&(sunState.radiance<1||distance(p,game.sunPositionFor(p))>sunState.radius)){p.hint='Stay in the Sun’s light to channel Sunlance.';return;}
+  const target=nearestEnemy(game,p,spec.range||spec.radius||3);
+  if(target&&['cone','dash','place','channel','beam'].includes(spec.type)){const d=distance(p,target)||1;p.facing={x:(target.x-p.x)/d,z:(target.z-p.z)/d};}
   if(slot==='R')p.ultimate=0;p.cooldowns[slot]=game.time+(spec.cooldown||1);p.castAt=game.time;p.castSlot=slot;p.hint=null;
   let x=p.x,z=p.z;if(spec.type==='place'||spec.kind==='snare'){const reach=spec.kind==='flare'?8:spec.kind==='vinebridge'||spec.kind==='icebridge'?5:3;for(let r=.5;r<=reach;r+=.5){const point={x:p.x+p.facing.x*r,z:p.z+p.facing.z*r};if(!game.physics.lineOfSight(p,point))break;x=point.x;z=point.z;}}
   const e=this.effect(game,p,spec,slot,x,z);
@@ -133,10 +136,7 @@ export class Abilities {
     if(e.kind==='grove'&&distance(sun,e)<e.radius)sunState.radiance=Math.min(100,sunState.radiance+dt*5);
    }
    if(e.kind==='embershield'){owner.frontShieldUntil=game.time+.1;if(distance(sun,e)<3){sunState.warmUntil=game.time+.1;sunState.freezeUntil=0;}}
-   if(e.kind==='pathfinder'){
-    const goal=game.recipe.entities.find(m=>m.type==='cradle'&&!game.machines[m.id]?.locked),nav=game.systems.find(s=>s.navigation)?.navigation;
-    if(goal){if(!e.route||game.time>=(e.routeAt||0)){e.route=nav?.route(sun,{x:goal.p[0],z:goal.p[1]})||[sun,{x:goal.p[0],z:goal.p[1]}];e.routeAt=game.time+1;}game.routeHints=e.route;}
-   }
+   if(e.kind==='pathfinder'&&game.guidance)game.routeHints=game.guidance.route;
    if(e.kind==='overdrive')for(const s of Object.values(game.machines))if(distance(s,e)<15)s.overdriveUntil=game.time+.1;
    if(e.kind==='forge'){
     for(const p of game.players.values())if(!owner.team||p.team===owner.team)p.heatImmuneUntil=game.time+.1;

@@ -40,3 +40,14 @@ Runtime assets are in `assets/characters/`; uncompressed sources and generation 
 The three shipped v8 Keepers retain their authored rigs and clips. The release builder derives
 Meshopt meshes with WebP paint (512 px), bodies below 12,000 triangles and equipment below
 6,000 triangles. Scenery atlases are 256 px; original meshes, textures and credits stay here.
+
+## Camera raycast acceleration (J8)
+[three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh) by Garrett Johnson, MIT licence.
+The release includes the notice at `licenses/three-mesh-bvh/LICENSE`.
+
+## J9 animated Shades · CC BY 4.0
+
+- **Lurker — Nightmare Creature 3#** by Mr.Prizz (https://sketchfab.com/Rodolfoisreal1423). Source: https://sketchfab.com/3d-models/nightmare-creature-3-4b676ea02aba4690801188881d67c034. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.
+- **Wisp — Skeleton Dragon** by LivindorCreation (https://sketchfab.com/LivindorCreation). Source: https://sketchfab.com/3d-models/skeleton-dragon-0ae92a30d2c242069acd61ed432f6c32. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.
+- **Brute — Low-poly orc** by Riltariki (https://sketchfab.com/Riltariki). Source: https://sketchfab.com/3d-models/low-poly-orc-62f1637181cb4f6aa38897f5b7ab5edf. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.
+- **Hound — Four Legged Predator** by Timsblends (https://sketchfab.com/timsblends). Source: https://sketchfab.com/3d-models/four-legged-predator-7f68f9daa698433299092bfecaae4e9e. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.

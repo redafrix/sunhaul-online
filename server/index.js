@@ -78,12 +78,12 @@ async function start() {
     });
     app.use(vite.middlewares);
   } else {
-    app.get(/^\/packs\/[\w-]+\.pack$/,async(req,res,next)=>{
+    app.get(/^\/(packs\/[\w-]+\.pack|enemies\/[a-z]+\.glb)$/,async(req,res,next)=>{
       res.vary('Accept-Encoding');const encoding=req.acceptsEncodings('br','gzip');if(!encoding)return next();
       const file=path.join(ROOT,'dist',req.path.slice(1)),compressed=file+(encoding==='br'?'.br':'.gz');
       try {
         const [source]=await Promise.all([stat(file),stat(compressed)]);
-        res.sendFile(compressed,{headers:{'Content-Encoding':encoding,'Content-Type':'application/octet-stream','X-File-Size':String(source.size),'Cache-Control':'public, max-age=31536000, immutable'}},error=>{if(error)next(error);});
+        res.sendFile(compressed,{headers:{'Content-Encoding':encoding,'Content-Type':'application/octet-stream','X-File-Size':String(source.size),'Cache-Control':req.path.startsWith('/packs/')?'public, max-age=31536000, immutable':'public, max-age=0, must-revalidate'}},error=>{if(error)next(error);});
       } catch(error){if(error.code==='ENOENT')next();else next(error);}
     });
     app.use(express.static(path.resolve(ROOT,'dist'),{setHeaders(res,file){

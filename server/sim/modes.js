@@ -41,7 +41,7 @@ export class Modes {
   if(this.kind!=='last-light')return;
   if(this.state.phase==='intermission'&&game.time>=this.state.nextAt){
    this.state.wave++;this.state.waveStartedAt=game.time;this.state.boss=null;this.state.phase='wave';const wave=this.state.wave,shades=game.systems.find(s=>s.spawn),count=Math.min(40,Math.max(2,Math.ceil((4+wave*2)*game.rules.shadeCount*(.7+.3*game.keeperCount()))));
-   for(let i=0;i<count;i++){const a=i/count*Math.PI*2+wave*.4,type=(game.difficulty==='eclipse'||wave>3)&&i%5===0?'brute':wave>2&&i%4===0?'moth':i%3===0?'lurker':'wisp';const s=shades.spawn(game,type,Math.cos(a)*37,Math.sin(a)*37,'hearth-zone');s.wave=wave;}
+   for(let i=0;i<count;i++){const hounds=Math.min(Math.floor(count/3)*3,Math.max(3,Math.floor(count/6)*3)),a=(i<hounds?Math.floor(i/3)*3/count*Math.PI*2+i%3*.06:i/count*Math.PI*2)+wave*.4,type=i<hounds?'hound':(game.difficulty==='eclipse'||wave>3)&&i%5===0?'brute':i%3===0?'lurker':'wisp';const s=shades.spawn(game,type,Math.cos(a)*37,Math.sin(a)*37,'hearth-zone');s.wave=wave;}
    if(wave%5===0){const boss=shades.spawn(game,'brute',0,-33,'hearth-zone');boss.boss=true;boss.name={harbour:'Tidewraith Echo',canopy:'Thorn Echo',frostveil:'Leviathan Echo',caldera:'Colossus Echo'}[game.recipe.world];boss.hp=boss.maxHP=240+wave*30;boss.wave=wave;boss.attackAt=game.time+5;this.state.boss=boss.id;}
   }
   for(const t of this.state.towers)if(t.lit){t.fuel=Math.max(0,t.fuel-dt*.6);if(!t.fuel)t.lit=false;else for(const s of game.shades)if(distance(t,s)<12)s.hp-=dt*(s.boss?12:24);}

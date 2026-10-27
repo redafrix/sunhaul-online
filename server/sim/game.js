@@ -14,10 +14,11 @@ import { WorldRules } from './world-rules.js';
 import { Bosses } from './bosses.js';
 import { moveVelocity,STEP } from '../../shared/movement.js';
 import { Modes } from './modes.js';
+import { Guidance } from './guidance.js';
 import { TEAMS } from '../../shared/modes.js';
 import { configuredRecipe,rulesFor } from '../../shared/rules.js';
 export class Game {
- constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(4,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Modes(this));}
+ constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(4,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new Modes(this));}
  keeperCount(team){return Math.max(1,[...this.players.values()].filter(p=>p.connected!==false&&(!team||p.team===team)).length);}
  sunBodyFor(p){return this.physics.sunBodies?.[p?.team]||this.physics.sunBody;}
  sunStateFor(p){return this.recipe.mode==='sun-race'?this.sunStates[p?.team||'dawn']:this.sun;}
@@ -43,7 +44,7 @@ export class Game {
    const aim=Math.hypot(p.input.fx||0,p.input.fz||0);if(aim>.1)p.facing={x:p.input.fx/aim,z:p.input.fz/aim};
    for(const command of p.commands.splice(0))this.command(p,command);
    if(p.carriedBy)continue;
-   const delta=moveVelocity(p,p.input,this.recipe,dt);if(p.dash?.until>this.time){delta.x=p.dash.x*p.dash.speed*dt;delta.z=p.dash.z*p.dash.speed*dt;}if(p.downedUntil>this.time||p.downedUntil&&this.difficulty==='eclipse')delta.x=delta.z=0;this.physics.move(p,delta);
+   const delta=moveVelocity(p,p.input,this.recipe,dt);if(p.dash?.until>this.time){delta.x=p.dash.x*p.dash.speed*dt;delta.z=p.dash.z*p.dash.speed*dt;}if(p.strikeLunge?.until>this.time){delta.x+=p.strikeLunge.x*dt;delta.z+=p.strikeLunge.z*dt;}if(p.downedUntil>this.time||p.downedUntil&&this.difficulty==='eclipse')delta.x=delta.z=0;this.physics.move(p,delta);
   }
   for(const system of this.systems)system.forces?.(this,dt);
   this.physics.step(dt);for(const p of this.players.values())this.physics.sync(p);

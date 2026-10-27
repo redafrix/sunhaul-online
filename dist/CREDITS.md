@@ -51,3 +51,11 @@ The release includes the notice at `licenses/three-mesh-bvh/LICENSE`.
 - **Wisp — Skeleton Dragon** by LivindorCreation (https://sketchfab.com/LivindorCreation). Source: https://sketchfab.com/3d-models/skeleton-dragon-0ae92a30d2c242069acd61ed432f6c32. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.
 - **Brute — Low-poly orc** by Riltariki (https://sketchfab.com/Riltariki). Source: https://sketchfab.com/3d-models/low-poly-orc-62f1637181cb4f6aa38897f5b7ab5edf. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.
 - **Hound — Four Legged Predator** by Timsblends (https://sketchfab.com/timsblends). Source: https://sketchfab.com/3d-models/four-legged-predator-7f68f9daa698433299092bfecaae4e9e. Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified for SUNHAUL: reduced geometry, removed textures/materials and redundant control tracks, selected and renamed animation clips, Meshopt compression, Shade shading.
+
+## The Drowned King — doctorA (CC BY 4.0)
+- **WoP - Octopus Pirate King (High Poly)** by [doctorA](https://sketchfab.com/doctorA).
+- Source: https://sketchfab.com/3d-models/wop-octopus-pirate-king-high-poly-06034af18d0b4f5fa0d5efdb475b5bb7
+- Licence: https://creativecommons.org/licenses/by/4.0/
+- Modifications: simplified to under 20,000 triangles, textures resized to 1024 px WebP,
+  thirteen selected and renamed motion clips, redundant control tracks removed,
+  Meshopt compression, runtime ink rim and gold exposure effect. Artist source is excluded.

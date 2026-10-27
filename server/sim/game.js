@@ -1,3 +1,4 @@
+import { headlandCheckpoint } from './drowned-king.js';
 import { randomUUID } from 'node:crypto';
 import { SKINS } from '../../shared/cosmetics.js';
 import { Physics } from './physics.js';
@@ -18,7 +19,7 @@ import { Guidance } from './guidance.js';
 import { TEAMS } from '../../shared/modes.js';
 import { configuredRecipe,rulesFor } from '../../shared/rules.js';
 export class Game {
- constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(4,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new Modes(this));}
+ constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(4,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new Modes(this));if(options.checkpoint==='headland')headlandCheckpoint(this);}
  keeperCount(team){return Math.max(1,[...this.players.values()].filter(p=>p.connected!==false&&(!team||p.team===team)).length);}
  sunBodyFor(p){return this.physics.sunBodies?.[p?.team]||this.physics.sunBody;}
  sunStateFor(p){return this.recipe.mode==='sun-race'?this.sunStates[p?.team||'dawn']:this.sun;}
@@ -49,7 +50,7 @@ export class Game {
   for(const system of this.systems)system.forces?.(this,dt);
   this.physics.step(dt);for(const p of this.players.values())this.physics.sync(p);
   for(const system of this.systems)system.after?.(this,dt);
-  if(this.rules.night&&this.recipe.mode!=='sun-race'&&!this.mission.complete){const elapsed=this.recipe.mode==='last-light'?this.time-(this.modeState.waveStartedAt||this.time):this.time,limit=this.recipe.mode==='last-light'?180:Math.max(300,this.recipe.mission?.par*1.5||this.rules.night);this.nightRemaining=Math.max(0,limit-elapsed);if(!this.nightRemaining){this.failed=true;this.failureReason='The Eclipse night timer ran out.';}}
+  if(this.rules.night&&!(this.boss?.kind==='drownedKing'&&this.boss.active)&&this.recipe.mode!=='sun-race'&&!this.mission.complete){const elapsed=this.recipe.mode==='last-light'?this.time-(this.modeState.waveStartedAt||this.time):this.time,limit=this.recipe.mode==='last-light'?180:Math.max(300,this.recipe.mission?.par*1.5||this.rules.night);this.nightRemaining=Math.max(0,limit-elapsed);if(!this.nightRemaining){this.failed=true;this.failureReason='The Eclipse night timer ran out.';}}
   if(this.failed&&this.recipe.mode==='last-light')this.modeState.phase='finished';
  }
  command(p,command) {

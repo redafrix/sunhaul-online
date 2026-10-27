@@ -1,11 +1,11 @@
 // Authoritative target selection, bounded lunges and dodgeable enemy wind-ups.
 import { distance } from "../../shared/rope-routing.js";
 export function nearestEnemy(game, p, range, cone = false) {
-  return game.shades
+  return [...game.shades,...(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated&&!game.boss.dyingAt?[game.boss]:[])]
     .filter(
       (s) =>
         s.hp > 0 &&
-        distance(p, s) <= range &&
+        distance(p, s) <= range + (s.kind==='drownedKing'?2.5:0) &&
         game.physics.lineOfSight(p, s) &&
         (!cone ||
           distance(p, s) < 0.1 ||
@@ -24,14 +24,16 @@ export function strike(game, p) {
     dx = aim.x / length,
     dz = aim.z / length;
   p.facing = { x: dx, z: dz };
-  const travel = target ? Math.min(1.2, Math.max(0, length - 1.25)) : 0;
+  const travel = game.boss?.kind==='drownedKing'&&game.boss.active ? 0 : target ? Math.min(1.2, Math.max(0, length - (target.kind==='drownedKing'?4:1.25))) : 0;
   p.strikeLunge = {
     x: (dx * travel) / 0.12,
     z: (dz * travel) / 0.12,
     until: game.time + 0.12,
   };
   p.attackTarget = target?.id || null;
-  if (target) {
+  if (target?.kind === 'drownedKing') {
+    game.damageBoss(p,14);
+  } else if (target) {
     target.hp -= target.type === "brute" ? 13 : 18;
     target.hitAt = game.time;
     target.stunUntil = Math.max(target.stunUntil, game.time + 0.18);

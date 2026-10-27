@@ -1,7 +1,8 @@
+import { DrownedKing } from './drowned-king.js';
 import { distance } from '../../shared/rope-routing.js';
 import { segmentDistance } from '../../shared/map-math.js';
 export class Bosses {
- constructor(game){this.spec=game.recipe.boss;this.state=this.spec?{id:this.spec.id,name:this.spec.name,kind:this.spec.kind,x:this.spec.p[0],z:this.spec.p[1],active:false,defeated:false,phase:0,progress:0,limbs:[0,0,0],nextAttack:0}:null;game.boss=this.state;}
+ constructor(game){if(game.recipe.boss?.kind==='drownedKing')return new DrownedKing(game);this.spec=game.recipe.boss;this.state=this.spec?{id:this.spec.id,name:this.spec.name,kind:this.spec.kind,x:this.spec.p[0],z:this.spec.p[1],active:false,defeated:false,phase:0,progress:0,limbs:[0,0,0],nextAttack:0}:null;game.boss=this.state;}
  ready(game){return (this.spec.requires||[]).every(id=>game.machines[id]?.complete||game.flags[id]);}
  illuminated(game,id){return !!game.machines[id]?.lit;}
  strike(game,p){const s=this.state,sun=game.physics.snapshot().sun;if(this.spec?.kind!=='frostLeviathan'||!s?.active||s.defeated||!s.exposed||distance(p,s)>6||game.sun.radiance<=0||distance(sun,s)>game.sun.radius)return;if(game.time<(p.bossStrikeAt||0))return;p.bossStrikeAt=game.time+.6;s.phaseDamage=Math.min(1,(s.phaseDamage||0)+.12);}

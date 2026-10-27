@@ -16,7 +16,8 @@ export function missionObjective(recipe,state,player) {
   if(missing===undefined)break;
   const dependency=recipe.entities.find(e=>e.id===missing);if(!dependency)break;entity=dependency;
  }
- let target=entity?at(entity):recipe.boss?.id===id?{id,type:'boss',x:state.boss?.x??recipe.boss.p[0],z:state.boss?.z??recipe.boss.p[1],label:recipe.boss.name}:null;
+ if(id==='dawn-lens'&&recipe.boss?.kind==='drownedKing'&&!flags[recipe.boss.id])entity=null;
+ let target=entity?at(entity):(recipe.boss?.id===id||id==='dawn-lens'&&recipe.boss?.kind==='drownedKing'&&!flags[recipe.boss.id])?{id,type:'boss',x:state.boss?.x??recipe.boss.p[0],z:state.boss?.z??recipe.boss.p[1],label:recipe.boss.name}:null;
  let instruction=entity?.id!==id?entity?.hint||objective.text:objective.text,action='solve';
  const sun=state.sun;
  if(entity?.type==='cradle'){

@@ -14,12 +14,12 @@ export class Rooms {
  create(options={}) {
   let code;do{code=Array.from({length:5},()=>alphabet[randomInt(alphabet.length)]).join('');}while(this.rooms.has(code));
   const recipe=this.recipes.get(options.map)||this.recipe;const game=new Game(recipe,this.catalog,options);
-  const room={code,game,seats:new Map(),host:null,created:Date.now(),emptySince:null,lastActive:Date.now(),public:options.quickMatch===true,aiKeepers:Number.isInteger(options.aiKeepers)?Math.max(0,Math.min(2,options.aiKeepers)):0,mode:recipe.mode||(options.mode==='solo'?'solo':'coop')};this.rooms.set(code,room);console.log(JSON.stringify({event:'room_start',room:code,public:room.public,map:recipe.id}));return room;
+  const room={code,game,seats:new Map(),host:null,created:Date.now(),emptySince:null,lastActive:Date.now(),checkpoint:options.checkpoint==='headland'?'headland':undefined,public:options.quickMatch===true,aiKeepers:Number.isInteger(options.aiKeepers)?Math.max(0,Math.min(2,options.aiKeepers)):0,mode:recipe.mode||(options.mode==='solo'?'solo':'coop')};this.rooms.set(code,room);console.log(JSON.stringify({event:'room_start',room:code,public:room.public,map:recipe.id}));return room;
  }
- metadata(room) {return {code:room.code,public:room.public,host:room.host,map:room.game.recipe.id,world:room.game.recipe.world,missionName:room.game.recipe.name,capacity:room.game.recipe.mode==='sun-race'?room.game.teamSize*2:4,teamSize:room.game.teamSize,mode:room.mode,aiKeepers:room.aiKeepers,bots:[...room.game.players.values()].filter(p=>p.bot).map(p=>({id:p.id,hero:p.hero,name:p.name})),difficulty:room.game.difficulty,mutators:room.game.mutators,seats:[...room.seats.values()].map(s=>({id:s.id,name:room.game.players.get(s.id)?.name,hero:room.game.players.get(s.id)?.hero,team:room.game.players.get(s.id)?.team,connected:!!s.socketId,host:s.id===room.host})),link:`/?room=${room.code}&map=${room.game.recipe.id}`};}
+ metadata(room) {return {code:room.code,checkpoint:room.checkpoint,public:room.public,host:room.host,map:room.game.recipe.id,world:room.game.recipe.world,missionName:room.game.recipe.name,capacity:room.game.recipe.mode==='sun-race'?room.game.teamSize*2:4,teamSize:room.game.teamSize,mode:room.mode,aiKeepers:room.aiKeepers,bots:[...room.game.players.values()].filter(p=>p.bot).map(p=>({id:p.id,hero:p.hero,name:p.name})),difficulty:room.game.difficulty,mutators:room.game.mutators,seats:[...room.seats.values()].map(s=>({id:s.id,name:room.game.players.get(s.id)?.name,hero:room.game.players.get(s.id)?.hero,team:room.game.players.get(s.id)?.team,connected:!!s.socketId,host:s.id===room.host})),link:`/?room=${room.code}&map=${room.game.recipe.id}`};}
  paused(room){const clients=[...room.seats.values()].filter(s=>s.socketId).map(s=>this.io.sockets.sockets.get(s.socketId)).filter(Boolean);return !clients.some(s=>s.data.ready)||(room.mode==='solo'&&clients.length===1&&!!clients[0].data.paused);}
  snapshot(room){return {...room.game.snapshot(),paused:this.paused(room)};}
- reset(room,recipe=room.game.baseRecipe,difficulty=room.game.difficulty,options={}){const old=room.game,reload=recipe.id!==old.recipe.id||difficulty!==old.difficulty||JSON.stringify(options.mutators??old.mutators)!==JSON.stringify(old.mutators);if(reload){room.hostReloadUntil=Date.now()+15000;for(const seat of room.seats.values()){const client=this.io.sockets.sockets.get(seat.socketId);if(client){client.data.ready=false;client.leave(room.code+':live');}}}room.game=new Game(recipe,this.catalog,{difficulty,teamSize:options.teamSize??old.teamSize,mutators:options.mutators??old.mutators});room.mode=recipe.mode||(room.mode==='solo'?'solo':'coop');for(const seat of room.seats.values()){room.game.addPlayer(seat.id,old.players.get(seat.id));room.game.players.get(seat.id).connected=!!seat.socketId;}room.game.setBots(recipe.mode?0:room.aiKeepers);old.physics.free();this.io.to(room.code).emit('mission_reset');this.io.to(room.code).emit('room_state',this.metadata(room));}
+ reset(room,recipe=room.game.baseRecipe,difficulty=room.game.difficulty,options={}){const old=room.game,reload=recipe.id!==old.recipe.id||difficulty!==old.difficulty||JSON.stringify(options.mutators??old.mutators)!==JSON.stringify(old.mutators);if(reload){room.hostReloadUntil=Date.now()+15000;for(const seat of room.seats.values()){const client=this.io.sockets.sockets.get(seat.socketId);if(client){client.data.ready=false;client.leave(room.code+':live');}}}room.game=new Game(recipe,this.catalog,{difficulty,teamSize:options.teamSize??old.teamSize,mutators:options.mutators??old.mutators,checkpoint:room.checkpoint});room.mode=recipe.mode||(room.mode==='solo'?'solo':'coop');for(const seat of room.seats.values()){room.game.addPlayer(seat.id,old.players.get(seat.id));room.game.players.get(seat.id).connected=!!seat.socketId;}room.game.setBots(recipe.mode?0:room.aiKeepers);old.physics.free();this.io.to(room.code).emit('mission_reset');this.io.to(room.code).emit('room_state',this.metadata(room));}
  join(socket,data={},ack=()=>{}) {
   data=data&&typeof data==='object'?data:{};const requested=typeof data.room==='string'?data.room.trim().toUpperCase():'';let room=requested?this.rooms.get(requested):null;
   if(requested&&!room)return ack({ok:false,error:'Room not found. Check the five-character code.'});
@@ -87,7 +87,17 @@ export class Rooms {
    if(data.aiKeepers!==undefined)r.aiKeepers=data.aiKeepers;
    r.game.setBots(r.game.recipe.mode?0:r.aiKeepers);
    const seat=r.seats.get(p.id);
-   if(!seat.announced){seat.announced=true;if(r.seats.size>1)this.io.to(r.code).emit('crew_joined',{hero:HERO_DEFS[p.hero].name});}
+   if(!seat.announced){
+    const sun=r.game.sunPositionFor(p);
+    if(Math.hypot(p.x-sun.x,p.z-sun.z)>3.5){
+     const at=r.game.safeSpawn(sun);
+     p.body.setTranslation({x:at.x,y:at.z},true);
+     p.body.setNextKinematicTranslation?.({x:at.x,y:at.z});
+     r.game.physics.sync(p);
+     p.hp=100;
+     p.downedUntil=0;
+    }
+    seat.announced=true;if(r.seats.size>1)this.io.to(r.code).emit('crew_joined',{hero:HERO_DEFS[p.hero].name});}
    this.io.to(r.code).emit('room_state',this.metadata(r));ack?.({ok:true,hero:p.hero});
   });
   listen('disconnect',()=>this.leave(socket));

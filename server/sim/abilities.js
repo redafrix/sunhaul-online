@@ -64,7 +64,7 @@ export class Abilities {
   }
   for(const t of targets){const d=distance(p,t)||1,dx=(t.x-p.x)/d,dz=(t.z-p.z)/d,s=game.shades.find(s=>s.id===t.id),power=spec.kind==='smash'?30:24;
    if(s){s.hp-=(spec.damage||0)*(s.type==='brute'?.5:1);this.knock(game,s,dx,dz,power*.5);}
-   (t.sun?game.sunBodyFor(p):physics.props.get(t.id)?.body)?.applyImpulse({x:dx*power,y:dz*power},true);
+   (t.sun&&game.boss?.kind==='drownedKing'&&game.boss.active?null:t.sun?game.sunBodyFor(p):physics.props.get(t.id)?.body)?.applyImpulse({x:dx*power,y:dz*power},true);
   }
   if(spec.kind==='tide'){
    if(inCone(p,sun,8)){sunState.coolUntil=game.time+6;sunState.radiance=Math.min(100,sunState.radiance+3);}

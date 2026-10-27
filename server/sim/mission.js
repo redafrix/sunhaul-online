@@ -22,6 +22,9 @@ export class Mission {
    return {x:spawn[0],z:spawn[1]};
   };
   game.retryCheckpoint = () => this.recover(game);
+  game.saveCheckpoint = () => {
+   this.saved = structuredClone({machines:game.machines,flags:game.flags,restored:game.restored||[]});
+  };
   this.saved = null;
   this.lastSun = game.sunPositionFor();
   this.lastMotion = 0;
@@ -70,6 +73,10 @@ export class Mission {
   this.allDownAt = null;
   this.state.complete = false;
   this.state.recoveryAvailable = false;
+  if(game.boss?.kind==='drownedKing'){
+   if(game.boss.defeated)game.flags[game.boss.id]=true;
+   else if(game.boss.active&&!game.boss.dyingAt)game.systems.find(s=>s.spec?.kind==='drownedKing').recover(game);
+  }
   this.lastSun = { ...at };
   this.lastMotion = this.lastCrew = game.time;
  }
@@ -95,7 +102,7 @@ export class Mission {
    this.lastMotion = game.time;
   }
   const charging = Object.values(game.machines).some((s) => s.active && !s.complete && s.progress > 0);
-  this.state.recoveryAvailable = game.recipe.mode !== 'sun-race' && !charging && game.time - this.lastMotion > 20;
+  this.state.recoveryAvailable = game.recipe.mode !== 'sun-race' && !(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated) && !charging && game.time - this.lastMotion > 20;
   if (crew.length && crew.every((p) => p.downedUntil > 0) && game.difficulty === 'eclipse') {
    this.allDownAt ??= game.time;
    if (game.time - this.allDownAt > 10) {

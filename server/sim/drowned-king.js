@@ -156,6 +156,10 @@ export class DrownedKing {
     s.nextChannel = s.introUntil + 22;
     s.metrics.phases.push({ phase: 1, at: game.time });
     game.checkpoint = { x: 0, z: -94 };
+    for (const p of game.players.values()) {
+      p.hp = 100;
+      p.downedUntil = 0;
+    }
     game.saveCheckpoint?.();
     // The arena owns its adds; existing harbour spawners cannot flood the climax.
     for (const shade of game.shades) shade.hp = 0;
@@ -217,10 +221,11 @@ export class DrownedKing {
       terrainHeight(game.recipe, sun.x, sun.z) <
       (game.recipe.water?.level ?? -1) - 0.1;
     if (washedAway) {
-      game.physics.sunBody.setTranslation({x:s.x,y:-107},true);
-      game.physics.sunBody.setLinvel({x:0,y:0},true);
-      s.metrics.washbacks=(s.metrics.washbacks||0)+1;
-      for(const p of game.players.values())p.hint='The tide returns the Sun. Bring it close again.';
+      game.physics.sunBody.setTranslation({ x: s.x, y: -107 }, true);
+      game.physics.sunBody.setLinvel({ x: 0, y: 0 }, true);
+      s.metrics.washbacks = (s.metrics.washbacks || 0) + 1;
+      for (const p of game.players.values())
+        p.hint = "The tide returns the Sun. Bring it close again.";
     }
     if (game.sun.radiance <= 0) this.recover(game);
     if (game.time < s.introUntil || s.retreatUntil > game.time) return;

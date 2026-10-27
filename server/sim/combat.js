@@ -7,7 +7,7 @@ export function nearestEnemy(game, p, range, cone = false) {
         s.hp > 0 &&
         distance(p, s) <= range + (s.kind==='drownedKing'?2.5:0) &&
         game.physics.lineOfSight(p, s) &&
-        (!cone ||
+        (!cone || s.kind==='drownedKing' ||
           distance(p, s) < 0.1 ||
           ((s.x - p.x) * p.facing.x + (s.z - p.z) * p.facing.z) /
             distance(p, s) >=

@@ -5,6 +5,7 @@ import { missionObjective } from '../../shared/mission-flow.js';
 export class Bots {
  constructor(game){this.navigation=new Navigation(game.recipe,game.catalog);this.paths=new Map();this.seq=0;game.setBots=heroes=>this.configure(game,heroes);game.ping=point=>this.ping(game,point);}
  configure(game,heroes){
+  if(game.recipe.mode==='sun-race')return;
   const humans=[...game.players.values()].filter(p=>!p.bot);
   const occupied=new Set(humans.map(p=>p.hero));
   const requested=Number.isInteger(heroes)?Math.max(0,Math.min(2,heroes)):Array.isArray(heroes)?Math.min(2,heroes.length):0;
@@ -33,6 +34,7 @@ export class Bots {
  before(game){
   this.navigation.update(game);
   const leader=[...game.players.values()].find(p=>!p.bot&&p.connected!==false);if(!leader)return;
+  if(game.recipe.mode==='sun-race'){this.race(game);return;}
   const sun=game.physics.snapshot().sun,bots=[...game.players.values()].filter(p=>p.bot);this.support(game,leader,bots,sun);
   const downed=[...game.players.values()].find(a=>a.downedUntil>game.time&&!a.bot&&a.connected!==false),rescuer=downed&&bots.filter(p=>!(p.downedUntil>game.time)).sort((a,b)=>distance(a,downed)-distance(b,downed))[0];
   bots.forEach((p,i)=>{
@@ -82,6 +84,17 @@ export class Bots {
    }
    const close=distance(p,target)<(plate||task?.type==='plate'?.45:task?1.5:.65),input={seq:Math.max(++this.seq,p.ack+1),x:close||d<.2?0:dx/d,z:close||d<.2?0:dz/d,sprint:!p.rope.attached&&distance(p,target)>7,commands:[...new Set(commands)]};game.input(p.id,input);
   });
+ }
+ race(game){
+  for(const p of game.players.values())if(p.raceRival){
+   const sun=game.sunPositionFor(p),engine=game.recipe.race.engines[p.team];
+   const sign=Math.sign(engine[0]-sun.x)||1;
+   const target=p.rope.attached?{x:engine[0]+sign*4,z:Math.abs(engine[0]-sun.x)>12?4:0}:sun;
+   const dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz)||1;
+   const commands=!p.rope.attached&&distance(p,sun)<3.4?['rope']:[];
+   p.botRole='Racing your crew';
+   game.input(p.id,{seq:Math.max(++this.seq,p.ack+1),x:dx/d*.82,z:dz/d*.82,commands});
+  }
  }
  snapshot(game){return {ping:game.lastPing||null};}
 }

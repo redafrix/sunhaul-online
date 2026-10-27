@@ -18,11 +18,18 @@ export class Abilities {
   const spec=base?{...base,cooldown:(base.cooldown||1)*factor}:null;if(!spec||p.downedUntil>game.time)return;
   p.cooldowns??={};if(p.cooldowns[slot]>game.time||slot==='R'&&(p.ultimate||0)<100)return;
   if(spec.type==='channel'&&(sunState.radiance<1||distance(p,game.sunPositionFor(p))>sunState.radius)){p.hint='Stay in the Sun’s light to channel Sunlance.';return;}
-  const target=nearestEnemy(game,p,spec.range||spec.radius||3);
+  const moment=game.recipe.powerMoments;
+  const discovery=slot==='Q'&&moment&&(p.hero==='sera'&&(distance(p,{x:moment.jetty.p[0],z:moment.jetty.p[1]})<4||distance(p,{x:moment.jetty.landing[0],z:moment.jetty.landing[1]})<3)||p.hero==='brann'&&!moment.shortcut.crates.every(id=>game.destroyed.includes(id))&&distance(p,{x:moment.shortcut.p[0],z:moment.shortcut.p[1]})<7);
+  if(discovery){const at=p.hero==='sera'?(p.x<-28?moment.jetty.p:moment.jetty.landing):[moment.shortcut.p[0],-44];const d=Math.hypot(at[0]-p.x,at[1]-p.z)||1;p.facing={x:(at[0]-p.x)/d,z:(at[1]-p.z)/d};}
+  const target=discovery?null:nearestEnemy(game,p,spec.range||spec.radius||3);
   if(target&&['cone','dash','place','channel','beam'].includes(spec.type)){const d=distance(p,target)||1;p.facing={x:(target.x-p.x)/d,z:(target.z-p.z)/d};}
   if(slot==='R')p.ultimate=0;p.cooldowns[slot]=game.time+(spec.cooldown||1);p.castAt=game.time;p.castSlot=slot;p.hint=null;
   let x=p.x,z=p.z;if(spec.type==='place'||spec.kind==='snare'){const reach=spec.kind==='flare'?8:spec.kind==='vinebridge'||spec.kind==='icebridge'?5:3;for(let r=.5;r<=reach;r+=.5){const point={x:p.x+p.facing.x*r,z:p.z+p.facing.z*r};if(!game.physics.lineOfSight(p,point))break;x=point.x;z=point.z;}}
+  const ramp=game.recipe.powerMoments?.ramp;
+  const onRamp=ramp&&Math.abs(p.x-ramp.a[0])<ramp.width/2+.2&&p.z<ramp.a[1]-4&&p.z>=ramp.b[1]-3.5;
+  if(spec.kind==='stake'&&onRamp){x=p.x+1;z=p.z;}
   const e=this.effect(game,p,spec,slot,x,z);
+  if(discovery&&spec.kind==='smash')e.discovery=true;
   if(e.kind==='pathfinder')e.radius=Math.hypot(...game.recipe.size);
   if(spec.type==='dash'){
    if(spec.kind==='blink'){const start={x:p.x,z:p.z};game.physics.move(p,{x:p.facing.x*spec.range,z:p.facing.z*spec.range});const moved=p.controller.computedMovement();p.body.setTranslation({x:p.x+moved.x,y:p.z+moved.y},true);game.physics.sync(p);e.from=start;e.x=p.x;e.z=p.z;p.dodgeUntil=game.time+.25;}
@@ -35,6 +42,7 @@ export class Abilities {
     if(spec.kind==='icebridge'&&!water){e.kind='icewall';e.radius=3;this.solid(game,e,{type:'box',half:[3,.22]},false);}
     if(spec.kind==='icebridge'&&distance(e,game.sunPositionFor(p))<3&&!(sunState.warmUntil>game.time))sunState.freezeUntil=game.time+1.5;
    }
+   if(spec.kind==='stake'&&onRamp&&p.rope.attached){p.rope.tied={id:e.id,x:e.x,z:e.z};p.rope.length=distance(e,game.sunPositionFor(p));p.hint='Ground Anchor holds the Sun. Take your rope to continue.';}
    if(spec.kind==='flare'){game.lastPing={x:e.x,z:e.z,at:game.time,flare:true};}
   }else if(spec.type==='cone')this.cone(game,p,spec,e);
   else if(spec.type==='channel')p.channel={...spec,until:e.until,effect:e.id};
@@ -64,7 +72,7 @@ export class Abilities {
   }
   for(const t of targets){const d=distance(p,t)||1,dx=(t.x-p.x)/d,dz=(t.z-p.z)/d,s=game.shades.find(s=>s.id===t.id),power=spec.kind==='smash'?30:24;
    if(s){s.hp-=(spec.damage||0)*(s.type==='brute'?.5:1);this.knock(game,s,dx,dz,power*.5);}
-   (t.sun&&game.boss?.kind==='drownedKing'&&game.boss.active?null:t.sun?game.sunBodyFor(p):physics.props.get(t.id)?.body)?.applyImpulse({x:dx*power,y:dz*power},true);
+   (t.sun&&(e.discovery||game.boss?.kind==='drownedKing'&&game.boss.active)?null:t.sun?game.sunBodyFor(p):physics.props.get(t.id)?.body)?.applyImpulse({x:dx*power,y:dz*power},true);
   }
   if(spec.kind==='tide'){
    if(inCone(p,sun,8)){sunState.coolUntil=game.time+6;sunState.radiance=Math.min(100,sunState.radiance+3);}

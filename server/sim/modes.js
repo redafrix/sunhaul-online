@@ -34,15 +34,16 @@ export class Modes {
  before(game,dt){
   if(this.kind==='sun-race'){
    const teams=TEAMS.map(team=>[...game.players.values()].filter(p=>p.team===team&&p.connected!==false));
+   this.state.soloAvailable=this.state.phase==='waiting'&&game.time>=5&&teams.flat().filter(p=>!p.bot).length===1;
    if(this.state.phase==='waiting'&&teams.every(t=>t.length===game.teamSize)){this.state.phase='racing';this.state.startedAt=game.time;}
    if(this.state.phase==='waiting')for(const p of game.players.values()){p.input={x:0,z:0};p.commands=[];}
-   if(this.state.phase==='racing'){this.state.remaining=Math.max(0,480-(game.time-this.state.startedAt));for(const p of game.players.values())p.racePull=p.haulUntil>game.time?1.6:1;}
+   if(this.state.phase==='racing'){this.state.remaining=Math.max(0,480-(game.time-this.state.startedAt));for(const p of game.players.values())p.racePull=(p.haulUntil>game.time?1.6:1)*(p.raceRival?.82:1);}
   }
   if(this.kind!=='last-light')return;
   if(this.state.phase==='intermission'&&game.time>=this.state.nextAt){
    this.state.wave++;this.state.waveStartedAt=game.time;this.state.boss=null;this.state.phase='wave';const wave=this.state.wave,shades=game.systems.find(s=>s.spawn),count=Math.min(40,Math.max(2,Math.ceil((4+wave*2)*game.rules.shadeCount*(.7+.3*game.keeperCount()))));
    for(let i=0;i<count;i++){const hounds=Math.min(Math.floor(count/3)*3,Math.max(3,Math.floor(count/6)*3)),a=(i<hounds?Math.floor(i/3)*3/count*Math.PI*2+i%3*.06:i/count*Math.PI*2)+wave*.4,type=i<hounds?'hound':(game.difficulty==='eclipse'||wave>3)&&i%5===0?'brute':i%3===0?'lurker':'wisp';const s=shades.spawn(game,type,Math.cos(a)*37,Math.sin(a)*37,'hearth-zone');s.wave=wave;}
-   if(wave%5===0){const boss=shades.spawn(game,'brute',0,-33,'hearth-zone');boss.boss=true;boss.name={harbour:'Tidewraith Echo',canopy:'Thorn Echo',frostveil:'Leviathan Echo',caldera:'Colossus Echo'}[game.recipe.world];boss.hp=boss.maxHP=240+wave*30;boss.wave=wave;boss.attackAt=game.time+5;this.state.boss=boss.id;}
+   if(wave===3){const boss=shades.spawn(game,'brute',0,-33,'hearth-zone');boss.boss=true;boss.name='Harbour Brute';boss.hp=boss.maxHP=160*(game.difficulty==='gentle'?.75:game.difficulty==='eclipse'?1.2:1)*(.7+.3*game.keeperCount());boss.wave=wave;boss.attackAt=game.time+5;this.state.boss=boss.id;}
   }
   for(const t of this.state.towers)if(t.lit){t.fuel=Math.max(0,t.fuel-dt*.6);if(!t.fuel)t.lit=false;else for(const s of game.shades)if(distance(t,s)<12)s.hp-=dt*(s.boss?12:24);}
   for(const w of this.state.walls){if(w.hp>0&&this.state.phase==='wave')for(const s of game.shades)if(distance(w,s)<3)w.hp=Math.max(0,w.hp-dt*(s.boss?18:5));w.collider.setEnabled(w.hp>0);}

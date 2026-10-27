@@ -55,7 +55,9 @@ export class Physics {
  step(dt=STEP) {
   for(const [team,body]of Object.entries(this.sunBodies)){const p=body.translation(),eps=.4;
   const dx=(this.floor(p.x+eps,p.y)-this.floor(p.x-eps,p.y))/(2*eps),dz=(this.floor(p.x,p.y+eps)-this.floor(p.x,p.y-eps))/(2*eps);
-  body.applyImpulse({x:-dx*5*dt,y:-dz*5*dt},true);
+  const ramp=this.recipe.powerMoments?.ramp;
+  const gravity=ramp&&Math.abs(p.x-ramp.a[0])<ramp.width/2&&p.y<ramp.a[1]&&p.y>ramp.b[1]?15:5;
+  body.applyImpulse({x:-dx*gravity*dt,y:-dz*gravity*dt},true);
   if(this.game?.mutators.includes('wind-storm')){const t=this.game.time,sign=this.recipe.mode==='sun-race'&&team==='dusk'?-1:1;body.applyImpulse({x:Math.sin(t*.4)*1.8*dt*sign,y:Math.cos(t*.27)*1.8*dt*sign},true);}
   const state=this.game?.sunStateFor({team}),surface=terrainAt(this.recipe,p.x,p.y),frozen=state?.freezeUntil>this.game?.time&&!(state?.warmUntil>this.game?.time);body.setLinearDamping(frozen?12:surface==='ice'?.55:surface==='mud'?4.5:surface==='water'?3.8:2.4);}
   const sunAt = this.sunBody.translation();

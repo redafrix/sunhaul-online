@@ -79,7 +79,7 @@ async function start() {
     app.use(vite.middlewares);
   } else {
     app.get(/^\/(packs\/[\w-]+\.pack|enemies\/[a-z]+\.glb)$/,async(req,res,next)=>{
-      res.vary('Accept-Encoding');const encoding=req.acceptsEncodings('br','gzip');if(!encoding)return next();
+      res.vary('Accept-Encoding');const encoding=req.acceptsEncodings('br')?'br':req.acceptsEncodings('gzip')?'gzip':null;if(!encoding)return next();
       const file=path.join(ROOT,'dist',req.path.slice(1)),compressed=file+(encoding==='br'?'.br':'.gz');
       try {
         const [source]=await Promise.all([stat(file),stat(compressed)]);

@@ -59,3 +59,8 @@ The release includes the notice at `licenses/three-mesh-bvh/LICENSE`.
 - Modifications: simplified to under 20,000 triangles, textures resized to 1024 px WebP,
   thirteen selected and renamed motion clips, redundant control tracks removed,
   Meshopt compression, runtime ink rim and gold exposure effect. Artist source is excluded.
+
+## J12 interface typography and pictograms
+- **Cinzel** by Natanael Gama; **Nunito** by Vernon Adams, Cyreal and Jacques Le Bailly. SIL Open Font License 1.1. Self-hosted, Latin-subset variable WOFF2 from [Google Fonts](https://github.com/google/fonts). Licences: `fonts/cinzel-OFL.txt`, `fonts/nunito-OFL.txt`.
+- **Kenney Game Icons** and **Game Icons Expansion**, [Kenney](https://kenney.nl/assets/game-icons), [expansion](https://kenney.nl/assets/game-icons-expansion), CC0. Downloaded once on 27 October 2026; only used recoloured symbols ship in `ui/icons/`: settings/gear, menu/barsHorizontal, person/singleplayer, plus, star, fist/fightFist, play/forward, howto/question, credits/information, race/flag, survive/power, boss/trophy.
+- Supplemental rope, sword, dash, shield, anchor, shield bash, dome, hook, paw, flame-heart and Little Sun face SVGs: SUNHAUL project, CC0. These symbols are not included in the two named Kenney packs; they match the plain filled icon treatment.

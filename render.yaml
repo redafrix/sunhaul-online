@@ -1,4 +1,4 @@
-# Free backup host for the same prebuilt Docker runtime.
+# Main host: free Render service for the prebuilt Docker runtime.
 services:
   - type: web
     name: sunhaul-online

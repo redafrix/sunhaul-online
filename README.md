@@ -1,18 +1,12 @@
----
-title: SUNHAUL
-emoji: ☀️
-colorFrom: yellow
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: true
-short_description: "Co-op online game: haul a living Sun on ropes."
----
 # SUNHAUL · Keepers of the Dawn
 A little Sun. A world worth carrying.
 
+Play: https://sunhaul-online.onrender.com
+
 Play alone, choose optional AI Keepers, or share your crew link with friends.
+Choose Brann, Mara or Sera, fight animated Shades and face the Drowned King.
 Move with WASD, take a rope with F, and use Q / E / R powers.
 
-Build: 421485a. This repository contains only the prebuilt jam runtime.
+Build: 0c210a2. This repository contains only the prebuilt jam runtime.
 Credits and asset licences: dist/CREDITS.md and dist/licenses/.
+Render deploys are manual: deploy the latest commit, then confirm /health.build.

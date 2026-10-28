@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#14232d"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/ui/sun-192.png"><title>SUNHAUL · Keepers of the Dawn</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='21' fill='%23e9b85c'/%3E%3C/svg%3E">
+  <script type="module" crossorigin src="/assets/index-snU5ruUM.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/three-DIdtAcM_.js">
+  <link rel="modulepreload" crossorigin href="/assets/hero-DT-F-Ro7.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-DgnIGH7I.js">
+  <link rel="modulepreload" crossorigin href="/assets/lighting-DjX1wL4c.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-5mmGzTQ6.css">
+</head>
+<body>
+ <main id="game-container"><canvas id="game-canvas" aria-label="SUNHAUL. Move with WASD or the touch stick. Take a rope and carry the Sun."></canvas>
+ <div id="ui-overlay">
+  <header id="top-bar"><span id="net-status" role="status" hidden>Connecting…</span><div class="top-right"></div></header>
+  <div class="mission-status"><section class="chapter"><img class="brand-sun game-icon" src="/ui/icons/sun.svg" alt=""><div><h2>First Light at the Quays</h2><span id="objective-label">1/5 · Wake the Bollard Quay</span><small id="objective-distance"></small><p id="objective-text">Bring the Sun to the glowing cradle.</p></div></section>
+  </div><div class="sun-status"><span class="small-sun"><img class="game-icon" src="/ui/icons/sun.svg" alt="Little Sun"></span><div><div class="radiance-heading">Radiance <span id="radiance-value">100</span></div><div class="light-track"><span></span></div><span id="sun-mood">Curious</span></div></div><div id="crew-portraits" aria-label="Your crew"></div>
+  <div id="joystick" aria-label="Movement joystick"><span></span></div>
+  <div class="hud-actions"><div class="action-buttons"><button id="rope-button"><img class="game-icon" src="/ui/icons/rope.svg" alt=""><span class="button-text">Take rope <kbd data-binding="rope">F</kbd></span></button><button id="attack-button"><img class="game-icon" src="/ui/icons/sword.svg" alt=""><span class="button-text">Attack <kbd data-binding="attack">J</kbd></span></button><button id="dodge-button"><img class="game-icon" src="/ui/icons/dash.svg" alt=""><span class="button-text">Dodge <kbd data-binding="dodge">Space</kbd></span></button></div>
+  <button id="use-button" hidden><span class="button-text">Interact <kbd data-binding="use">G</kbd></span></button>
+  </div><div id="prompt" role="status" hidden></div>
+ </div>
+ <div id="loading" role="status" aria-live="polite"><div class="loading-sun"><img class="game-icon" src="/ui/icons/sun.svg" alt="Little Sun"></div><p class="eyebrow">KEEPERS OF THE DAWN</p><h2>At the edge of morning.</h2><p id="loading-text">Finding your crew…</p><progress id="loading-progress" max="100" value="0" aria-label="Mission loading"></progress><p class="loading-tip">Ropes pull harder together.</p><button id="retry-button" hidden>Try again</button><button id="new-crew-button" hidden>Start a fresh crew</button></div>
+ </main>
+ <dialog id="orientation-guard" aria-labelledby="orientation-title"><span class="rotating-phone" aria-hidden="true"></span><h2 id="orientation-title">Turn your phone sideways to play</h2><button class="primary">Play fullscreen</button></dialog>
+ <script>
+  (()=>{const fail=()=>{if(window.sunhaulStarted)return;document.getElementById('loading-text').textContent='The game download was interrupted. Please try again.';const retry=document.getElementById('retry-button');retry.hidden=false;retry.onclick=()=>location.reload();};
+   addEventListener('error',event=>{if(event.target?.tagName==='SCRIPT')fail();},true);
+   setTimeout(fail,45000);
+  })();
+ </script>
+</body>
+</html>

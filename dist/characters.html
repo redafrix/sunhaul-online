@@ -1,0 +1,52 @@
+<!-- Character Inspector: shared gameplay actors and v2 clip/socket auditions. -->
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="theme-color" content="#18313b"><title>Character Library · SUNHAUL</title>
+ <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='21' fill='%23e9b85c'/%3E%3C/svg%3E">
+  <script type="module" crossorigin src="/assets/characters-CMBPlm9N.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/three-DIdtAcM_.js">
+  <link rel="modulepreload" crossorigin href="/assets/hero-DT-F-Ro7.js">
+  <link rel="stylesheet" crossorigin href="/assets/characters-Dl3sNvbq.css">
+</head>
+<body>
+ <header><a class="brand" href="/">✺ <span>SUNHAUL<small>KEEPERS OF THE DAWN</small></span></a><div><span class="eyebrow">THE KEEPER WORKSHOP</span><h1>Character Library <span>/ Inspector</span></h1></div><a class="back" href="/">Return to game ↗</a></header>
+ <main>
+  <aside class="roster-panel"><h2>Heroes being rebuilt</h2><div id="roster" aria-label="Heroes"></div><p class="note">Only rebuilt heroes appear here. Orbit with the mouse, scroll to zoom.</p></aside>
+  <section class="stage-panel" aria-label="Character preview">
+   <div class="stage-heading"><div><span class="eyebrow" id="hero-title">WARDEN</span><h2 id="hero-name">Mara</h2></div></div>
+   <canvas id="characters" aria-label="Interactive 3D character preview"></canvas>
+   <p id="loading" role="status">Loading…</p>
+   <div class="view-controls" aria-label="Camera views"><button data-view="body" aria-pressed="true">Full body</button><button data-view="head">Face / glasses</button><button data-view="hands">Right grip</button><button data-view="left-hand">Left grip</button><button data-view="grips">Both grips</button><button data-view="side">Side / fit</button><button data-view="back">Back / cloak</button></div>
+   <div class="stage-status"><span id="animation-status">Idle · 0.20s blend</span><span id="load-status">Loading models</span></div>
+  </section>
+  <aside class="animation-panel"><span class="eyebrow">ANIMATION STUDIO</span><h2>Find the motion</h2><div id="states" aria-label="Animation states"></div>
+   <h3 class="power-heading">Powers</h3><div id="powers" class="power-buttons" aria-label="Power animations"></div>
+   <div id="v2-tools" hidden style="display:none">
+    <h3 class="power-heading">Shared motion library <small id="clip-count"></small></h3>
+    <label class="slider-label" for="clip-a">First clip</label><select id="clip-a" aria-label="First shared clip"></select>
+    <label class="slider-label" for="clip-b">Blend to clip</label><select id="clip-b" aria-label="Second shared clip"></select>
+    <label class="slider-label" for="clip-blend">Clip blend <output id="blend-value">0%</output></label><input id="clip-blend" type="range" min="0" max="1" step="0.01" value="0">
+    <div class="playback"><button id="clip-play">Play / blend</button><button id="clip-reset">Gameplay states</button></div>
+    <label class="toggle"><input id="sockets" type="checkbox"> Show hand / back sockets</label><p class="note" id="socket-list"></p>
+    <div class="playback"><button id="equipment-draw">Draw equipment</button><button id="equipment-stow">Stow equipment</button></div><p class="note" id="equipment-note"></p>
+   </div>
+   <div hidden style="display:none">   <label class="slider-label" for="speed">Movement speed <output id="speed-value">0.0 m/s</output></label><input id="speed" type="range" min="0" max="11" value="0" step="0.1">
+   <label class="toggle"><input id="hauling" type="checkbox"> Hauling upper body</label><label class="toggle"><input id="backward" type="checkbox"> Walk backward while hauling</label>
+   
+   <label class="slider-label" for="playback-rate">Preview speed <output id="rate-value">1×</output></label><input id="playback-rate" type="range" min="0.1" max="1.5" value="1" step="0.1">
+   <label class="toggle"><input id="cycle" type="checkbox"> Cycle through all states</label><label class="toggle"><input id="bones" type="checkbox"> Show skeleton</label><label class="toggle"><input id="floor" type="checkbox" checked> Moving floor / foot contact</label>
+</div>
+   <h3 class="power-heading">Move while pulling</h3>
+   <label class="slider-label" for="pull-dir">Direction <output id="pull-dir-value">180° (away from the load)</output></label><input id="pull-dir" type="range" min="0" max="359" step="1" value="180">
+   <label class="slider-label" for="pull-speed">Speed <output id="pull-speed-value">0.0 m/s (standing)</output></label><input id="pull-speed" type="range" min="0" max="4.5" step="0.1" value="0">
+   <script>
+    const dirNames=a=>a<23||a>337?'toward the load':a<68?'forward-left':a<113?'left':a<158?'back-left':a<203?'away from the load':a<248?'back-right':a<293?'right':'forward-right';
+    for(const id of ['pull-dir','pull-speed'])document.getElementById(id).addEventListener('input',()=>{const a=+document.getElementById('pull-dir').value,v=+document.getElementById('pull-speed').value;document.getElementById('pull-dir-value').value=a+'° ('+dirNames(a)+')';document.getElementById('pull-speed-value').value=v.toFixed(1)+' m/s'+(v?'':' (standing)');});
+   </script>
+   <div class="playback"><button id="pause" aria-pressed="false">Pause</button><button id="step">Step 1 frame</button></div>
+  </aside>
+ </main>
+</body>
+</html>

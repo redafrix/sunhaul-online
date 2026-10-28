@@ -1,0 +1,5 @@
+Poly Haven assets — CC0 1.0 Universal.
+https://polyhaven.com/license
+https://creativecommons.org/publicdomain/zero/1.0/
+HDRI: Kloofendal 48d Partly Cloudy (Pure Sky).
+Textures: cobblestone_floor_03, aerial_grass_rock, brown_mud_02, sand_01.

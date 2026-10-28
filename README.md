@@ -7,6 +7,6 @@ Play alone, choose optional AI Keepers, or share your crew link with friends.
 Choose Brann, Mara or Sera, fight animated Shades and face the Drowned King.
 Move with WASD, take a rope with F, and use Q / E / R powers.
 
-Build: be8a3d8. This repository contains only the prebuilt jam runtime.
+Build: 8c8b82b. This repository contains only the prebuilt jam runtime.
 Credits and asset licences: dist/CREDITS.md and dist/licenses/.
 Render deploys are manual: deploy the latest commit, then confirm /health.build.

@@ -1,35 +1,35 @@
-<!-- Standalone Ultra Keeper library; the game loads only after leaving this page. -->
+<!-- Keeper selection and journey preparation, with cached Ultra previews. -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#14232d">
-  <title>Keeper Library · SUNHAUL</title>
+  <title>Choose your Keeper · SUNHAUL</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='21' fill='%23e9b85c'/%3E%3C/svg%3E">
-  <script type="module" crossorigin src="/assets/characters-B-4tI6O4.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/three-BxtStimU.js">
-  <link rel="modulepreload" crossorigin href="/assets/power-fx-DzVwsmTR.js">
-  <link rel="stylesheet" crossorigin href="/assets/characters-CreW1FxX.css">
+  <script type="module" crossorigin src="/assets/characters-C-kC3_dO.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/three-BIhzM1hF.js">
+  <link rel="modulepreload" crossorigin href="/assets/touch-display-DWBln-oU.js">
+  <link rel="stylesheet" crossorigin href="/assets/characters-D4XAt2WU.css">
 </head>
 <body>
   <header>
     <a class="brand" href="/">✺ <span>SUNHAUL<small>KEEPERS OF THE DAWN</small></span></a>
-    <span class="library-label">THE KEEPER LIBRARY</span>
-    <a class="back" href="/">Return to game ↗</a>
+    <p class="chapter-label">Before the first light</p>
+    <a class="back" href="/">Back to title</a>
   </header>
   <main>
     <aside class="roster-panel">
-      <p class="eyebrow">A LITTLE SUN. A WORLD WORTH CARRYING.</p>
-      <h1>Meet your<br>Keeper.</h1>
-      <p class="intro">Three companions.<br>Three ways to carry the dawn.</p>
+      <p class="eyebrow">Your journey begins here</p>
+      <h1>Choose your<br>Keeper.</h1>
+      <p class="intro">A little Sun.<br>A world worth carrying.</p>
       <nav id="roster" aria-label="Choose a Keeper"></nav>
-      <p class="library-note">Take a closer look. Try their powers.<br>Your journey starts when you’re ready.</p>
+      <p id="crew-readiness" class="library-note" role="status">Gathering your three Keepers…</p>
     </aside>
     <section class="stage-panel" aria-label="Interactive character studio">
       <canvas id="characters" aria-label="3D Keeper. Drag to rotate; scroll or pinch to zoom."></canvas>
-      <div class="stage-heading"><span class="eyebrow" id="hero-title"></span><h2 id="hero-name"></h2></div>
-      <div class="loading-panel"><p id="loading" role="status">Loading your Keeper…</p><button id="retry" hidden>Try again</button></div>
+      <div class="stage-heading"><span id="hero-title"></span><h2 id="hero-name"></h2><p id="hero-origin"></p></div>
+      <div class="loading-panel"><p id="loading" role="status">Gathering your Keeper…</p><button id="retry" hidden>Try again</button></div>
       <div class="view-controls" aria-label="Camera views">
         <button data-view="body" aria-pressed="true">Full body</button>
         <button data-view="face" aria-pressed="false">Close-up</button>
@@ -39,23 +39,48 @@
       <p id="load-status" class="stage-status" role="status"></p>
     </section>
     <aside class="details-panel">
-      <p class="eyebrow">YOUR COMPANION IN THE DARK</p>
-      <p id="hero-story" class="hero-story"></p>
-      <h3>Try a motion</h3>
-      <div id="states" class="states" aria-label="Motion previews"></div>
-      <button id="pause" class="pause" aria-pressed="false">Pause</button>
-      <h3>Explore their powers <span>Click or press Q · E · R</span></h3>
-      <div id="powers" aria-label="Ability previews"></div>
-      <div class="passive"><h3>Always at your side</h3><p id="hero-passive"></p></div>
-      <section class="journey" aria-label="Your journey choices">
-        <div class="choices">
-          <label for="difficulty">Difficulty<select id="difficulty"><option value="gentle">Story</option><option value="adventure" selected>Keeper</option><option value="eclipse">Eclipse</option></select></label>
-          <label for="ai">AI Keepers<select id="ai"><option value="0">None</option><option value="1">1</option><option value="2">2</option></select></label>
-        </div>
-        <button id="choose" class="primary" disabled>Choose your Keeper</button>
-        <p>Continue to the game with these choices.</p>
+      <div class="dossier-tabs" role="tablist" aria-label="Keeper details">
+        <button id="story-tab" role="tab" aria-selected="true" aria-controls="story-panel">Their story</button>
+        <button id="powers-tab" role="tab" aria-selected="false" aria-controls="powers-panel" tabindex="-1">Powers</button>
+        <button id="journey-tab" role="tab" aria-selected="false" aria-controls="journey-panel" tabindex="-1">Journey</button>
+      </div>
+      <section id="story-panel" role="tabpanel" aria-labelledby="story-tab">
+        <p id="hero-fantasy" class="hero-fantasy"></p>
+        <p id="hero-lineage" class="hero-lineage"></p>
+        <p id="hero-story" class="hero-story"></p>
+        <div class="passive"><h3>A Keeper’s gift</h3><p id="hero-passive"></p></div>
+        <button id="explore-powers" class="outline-button">Explore their powers <span aria-hidden="true">▷</span></button>
+      </section>
+      <section id="powers-panel" role="tabpanel" aria-labelledby="powers-tab" hidden>
+        <div class="motion-heading"><h3>Try a motion</h3><button id="pause" class="pause" aria-pressed="false">Pause</button></div>
+        <div id="states" class="states" aria-label="Motion previews"></div>
+        <h3 class="power-heading">Wield the light <span>Click a power or press Q · E · R</span></h3>
+        <div id="powers" aria-label="Ability previews"></div>
+      </section>
+      <section id="journey-panel" class="journey" role="tabpanel" aria-labelledby="journey-tab" hidden>
+        <h2 id="journey-title">Make the journey yours</h2>
+        <fieldset id="difficulty" class="choice-group"><legend>Difficulty</legend>
+          <div class="choice-options">
+            <button type="button" data-value="gentle" aria-pressed="false"><span aria-hidden="true">◔</span><strong>Story</strong><small>A gentler dawn</small></button>
+            <button type="button" data-value="adventure" aria-pressed="true"><span aria-hidden="true">☀</span><strong>Keeper</strong><small>A worthy challenge</small></button>
+            <button type="button" data-value="eclipse" aria-pressed="false"><span aria-hidden="true">◑</span><strong>Eclipse</strong><small>Brave the darkness</small></button>
+          </div>
+        </fieldset>
+        <fieldset id="ai" class="choice-group"><legend>AI companions</legend>
+          <div class="choice-options companions">
+            <button type="button" data-value="0" aria-pressed="true"><strong>Just me</strong><small>Your own adventure</small></button>
+            <button type="button" data-value="1" aria-pressed="false"><strong>One ally</strong><small>A helping hand</small></button>
+            <button type="button" data-value="2" aria-pressed="false"><strong>Two allies</strong><small>A little company</small></button>
+          </div>
+        </fieldset>
+      </section>
+      <section class="embark-actions" aria-label="Start your journey">
+        <p id="journey-summary" class="journey-summary" role="status"></p>
+        <button id="choose" class="primary" disabled><span aria-hidden="true">✺</span><span id="choose-label">Begin the journey</span><span aria-hidden="true">›</span></button>
+        <p id="journey-note" class="journey-note">The harbour awaits. Your Keeper is ready when you are.</p>
       </section>
     </aside>
   </main>
+  <div id="embark-curtain" hidden role="status"><span class="curtain-sun" aria-hidden="true">✺</span><h2>Carry a little light.</h2><p>Opening the harbour…</p></div>
 </body>
 </html>

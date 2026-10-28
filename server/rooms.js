@@ -108,7 +108,16 @@ export class Rooms {
  advance() {
   const now=performance.now();this.accumulator+=Math.min(.15,(now-this.last)/1000);this.last=now;
   let steps=0;
-  while(this.accumulator>=STEP){steps++;for(const room of this.rooms.values()){if(!this.paused(room))room.game.step();room.snapshotStep=(room.snapshotStep||0)+1;if(room.snapshotStep%3===0)this.io.to(room.code+':live').emit('snapshot',this.snapshot(room));}this.accumulator-=STEP;}
+  const connectedRooms=[...this.rooms.values()].filter(room=>[...room.seats.values()].some(seat=>seat.socketId));
+  while(this.accumulator>=STEP){
+   steps++;
+   for(const room of connectedRooms){
+    if(!this.paused(room))room.game.step();
+    room.snapshotStep=(room.snapshotStep||0)+1;
+    if(room.snapshotStep%3===0)this.io.to(room.code+':live').emit('snapshot',this.snapshot(room));
+   }
+   this.accumulator-=STEP;
+  }
   for(const room of this.rooms.values()){
    if(room.hostReloadUntil&&room.hostReloadUntil<Date.now()){room.hostReloadUntil=0;if(!room.seats.get(room.host)?.socketId){room.host=[...room.seats.values()].find(s=>s.socketId)?.id||null;this.io.to(room.code).emit('room_state',this.metadata(room));}}
    for(const seat of room.seats.values())if(!seat.socketId&&seat.expires<=Date.now()){room.game.removePlayer(seat.id);room.seats.delete(seat.id);room.game.setBots(room.game.recipe.mode?0:room.aiKeepers);this.io.to(room.code).emit('room_state',this.metadata(room));}

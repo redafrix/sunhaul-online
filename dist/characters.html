@@ -7,18 +7,32 @@
   <meta name="theme-color" content="#14232d">
   <title>Choose your Keeper · SUNHAUL</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='21' fill='%23e9b85c'/%3E%3C/svg%3E">
-  <script type="module" crossorigin src="/assets/characters-CDTmZjut.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/three-BIhzM1hF.js">
-  <link rel="modulepreload" crossorigin href="/assets/touch-display-DWBln-oU.js">
-  <link rel="stylesheet" crossorigin href="/assets/characters-D4XAt2WU.css">
+  <script type="module" crossorigin src="/assets/preload-helper-BlTxHScW.js"></script>
+  <script type="module" crossorigin src="/assets/world-audio-ClKb44Se.js"></script>
+  <script type="module" crossorigin src="/assets/app-shell--q5cWw2o.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/characters-C_bYYHB5.css">
 </head>
-<body>
-  <header>
+<body class="library-gathering">
+  <section id="library-loading" aria-labelledby="gathering-title" aria-busy="true">
+    <div class="gathering-sun" aria-hidden="true"><img src="/ui/icons/sun.svg" alt=""></div>
+    <p class="gathering-brand">SUNHAUL · KEEPERS OF THE DAWN</p>
+    <h1 id="gathering-title">A light for every journey.</h1>
+    <p id="loading" role="status" aria-live="polite">Gathering your three Keepers…</p>
+    <progress id="gathering-progress" max="3" value="0" aria-label="Keepers loaded"></progress>
+    <div class="gathering-crew" aria-label="Keeper loading status">
+      <span data-gathering="brann">Brann</span><span data-gathering="mara">Mara</span><span data-gathering="sera">Sera</span>
+    </div>
+    <p id="gathering-count">0 of 3 Keepers ready</p>
+    <p class="gathering-tip">Three Keepers. One little Sun. A world worth carrying.</p>
+    <button id="retry" hidden>Try again</button>
+    <a class="gathering-back" href="/">Back to title</a>
+  </section>
+  <header inert>
     <a class="brand" href="/">✺ <span>SUNHAUL<small>KEEPERS OF THE DAWN</small></span></a>
     <p class="chapter-label">Before the first light</p>
     <a class="back" href="/">Back to title</a>
   </header>
-  <main>
+  <main inert>
     <aside class="roster-panel">
       <p class="eyebrow">Your journey begins here</p>
       <h1>Choose your<br>Keeper.</h1>
@@ -29,7 +43,6 @@
     <section class="stage-panel" aria-label="Interactive character studio">
       <canvas id="characters" aria-label="3D Keeper. Drag to rotate; scroll or pinch to zoom."></canvas>
       <div class="stage-heading"><span id="hero-title"></span><h2 id="hero-name"></h2><p id="hero-origin"></p></div>
-      <div class="loading-panel"><p id="loading" role="status">Gathering your Keeper…</p><button id="retry" hidden>Try again</button></div>
       <div class="view-controls" aria-label="Camera views">
         <button data-view="body" aria-pressed="true">Full body</button>
         <button data-view="face" aria-pressed="false">Close-up</button>
@@ -82,5 +95,18 @@
     </aside>
   </main>
   <div id="embark-curtain" hidden role="status"><span class="curtain-sun" aria-hidden="true">✺</span><h2>Carry a little light.</h2><p>Opening the harbour…</p></div>
+  <script>
+    (() => {
+      const fail = () => {
+        if (window.sunhaulStarted || window.sunhaulLibrary) return;
+        document.getElementById('loading').textContent = 'The library download was interrupted. Please try again.';
+        const retry = document.getElementById('retry');
+        retry.hidden = false;
+        retry.onclick = () => location.reload();
+      };
+      addEventListener('error', fail);
+      setTimeout(fail, 45000);
+    })();
+  </script>
 </body>
 </html>

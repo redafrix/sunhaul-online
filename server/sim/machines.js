@@ -2,9 +2,21 @@ import RAPIER from '@dimforge/rapier2d-compat';
 import { footprint } from '../../shared/physics-geometry.js';
 import { MACHINE_TYPES,objectiveDone } from '../../shared/machines.js';
 import { distance } from '../../shared/rope-routing.js';
-import { segmentDistance } from '../../shared/map-math.js';
+import { segmentDistance, terrainHeight } from '../../shared/map-math.js';
 import { PUZZLE_TYPES } from './puzzles.js';
 const support=['cradle','well','receiver','plate','gate','shadowLock','hook','vineNode','hedge','iceField','loadField','meltSocket','bell','avalanche','coolingChannel','steamVent',...PUZZLE_TYPES];
+function chargeWave(game,e,s){
+ const shades=game.systems.find(v=>v.spawn&&v.shades);if(!shades)return;
+ const zone=game.recipe.zones?.find(z=>z.id===e.restores)?.id||e.restores;
+ const pool=(game.recipe.shadeSpawns||[]).filter(v=>v.zone===zone).map(v=>v.type);
+ const types=pool.length?pool:['lurker','wisp'];
+ const count=Math.max(2,Math.round(2.5*game.rules.shadeCount*(.7+.3*game.keeperCount())));
+ for(let i=0;i<count&&game.shades.length<48;i++){
+  const a=(i/count)*Math.PI*2+game.time,x=s.x+Math.cos(a)*13,z=s.z+Math.sin(a)*13;
+  if(terrainHeight(game.recipe,x,z)<=(game.recipe.water?.level??-1))continue;
+  const shade=shades.spawn(game,types[i%types.length],x,z,zone);shade.wave=true;
+ }
+}
 export class Machines {
  constructor(game) {
   this.entities=game.recipe.entities.filter(e=>[...MACHINE_TYPES,...support].includes(e.type));this.states={};this.blockers=new Map();
@@ -76,7 +88,10 @@ export class Machines {
     if(ready){
      game.physics.sunBody.setTranslation({x:s.x,y:s.z},true);
      game.physics.sunBody.setLinvel({x:0,y:0},true);
+     const before=s.progress;
      s.progress=Math.min(1,s.progress+dt/e.chargeSeconds);
+     // Defending the hearth is a real fight: two Shade waves rise from the dark around it while it charges.
+     for(const at of [.12,.55])if(before<at&&s.progress>=at)chargeWave(game,e,s);
     }
     if(s.progress>=1){s.locked=s.complete=true;game.systems.find(a=>a.restore)?.restore(game,e);game.teamwork(25);}
    }

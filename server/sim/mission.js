@@ -1,4 +1,5 @@
 // Mission timing, ratings and cradle recovery are owned by the server.
+import { clearActions } from '../../shared/hero-actions.js';
 import { terrainHeight } from '../../shared/map-math.js';
 export class Mission {
  constructor(game) {
@@ -49,6 +50,7 @@ export class Mission {
   game.physics.sunBody.setLinvel({ x: 0, y: 0 }, true);
   Object.assign(game.sun, { radiance: 100, gutterFor: 0, mood: 'curious' });
   for (const p of game.players.values()) {
+   clearActions(p);
    const spot = game.safeSpawn(at);
    p.body.setTranslation({ x: spot.x, y: spot.z }, true);
    p.body.setNextKinematicTranslation({ x: spot.x, y: spot.z });

@@ -52,6 +52,13 @@ app.get('/api/maps/:world/:id',async(req,res)=>{
   if(!recipe||recipe.world!==world)return res.status(404).json({error:'Map not found'});
   res.json(recipe);
 });
+// Read-only crew availability for the library; seat tokens are never returned.
+app.get('/api/crews/:code', (req, res) => {
+ const room=rooms.rooms.get(req.params.code.toUpperCase());
+ res.set('Cache-Control','no-store');
+ if(!room)return res.status(404).json({error:'This crew is no longer here.'});
+ res.json(rooms.metadata(room));
+});
 app.get('/api/adventure',(_req,res)=>res.json(CAMPAIGN));
 app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,build,phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,...metrics,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
 if(!isProd){

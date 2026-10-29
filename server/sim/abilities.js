@@ -1,5 +1,5 @@
 // Server powers release on authored cast markers; movement remains locked during the cast.
-import {beginAction,HERO_ACTIONS} from '../../shared/hero-actions.js';
+import {beginAction,clearActions,HERO_ACTIONS} from '../../shared/hero-actions.js';
 import {nearestEnemy} from './combat.js';
 import RAPIER from '@dimforge/rapier2d-compat';
 import { ABILITIES } from '../../shared/heroes.js';
@@ -152,7 +152,7 @@ export class Abilities {
     for(const [id,r]of game.physics.props)if(distance(p,{x:r.body.translation().x,z:r.body.translation().y})<2&&!p.dash.hits.includes(id)){p.dash.hits.push(id);r.body.applyImpulse({x:p.dash.x*20,y:p.dash.z*20},true);}
     this.breakProps(game,p,2,24,{debris:[]});
    }
-   if(p.carry){const carried=p.carry.type==='prop'?game.physics.props.get(p.carry.id):game.players.get(p.carry.id);if(!carried){p.carry=null;continue;}const x=p.x+p.facing.x*.9,z=p.z+p.facing.z*.9;carried.body.setTranslation({x,y:z},true);if(p.carry.type==='prop')carried.body.setLinvel({x:0,y:0},true);else {carried.downedUntil=game.time+8;game.physics.sync(carried);if(distance(p,sun)<3.5){carried.hp=60;carried.downedUntil=0;carried.carriedBy=null;carried.collider.setEnabled(true);p.carry=null;game.teamwork(15);}}}
+   if(p.carry){const carried=p.carry.type==='prop'?game.physics.props.get(p.carry.id):game.players.get(p.carry.id);if(!carried){p.carry=null;continue;}const x=p.x+p.facing.x*.9,z=p.z+p.facing.z*.9;carried.body.setTranslation({x,y:z},true);if(p.carry.type==='prop')carried.body.setLinvel({x:0,y:0},true);else {carried.downedUntil=game.time+8;game.physics.sync(carried);if(distance(p,sun)<3.5){carried.hp=60;carried.downedUntil=0;clearActions(carried);beginAction(carried,'getUp','getUp',game.time);carried.shieldUntil=carried.action.until;carried.carriedBy=null;carried.collider.setEnabled(true);p.carry=null;game.teamwork(15);}}}
   }
   game.routeHints=[];
   for(const e of game.effects){if(e.until<=game.time)continue;const owner=game.players.get(e.owner);if(!owner)continue;const sun=game.sunPositionFor(owner),sunState=game.sunStateFor(owner);

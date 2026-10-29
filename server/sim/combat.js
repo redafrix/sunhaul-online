@@ -1,5 +1,5 @@
 // Authoritative target selection, bounded lunges and dodgeable enemy wind-ups.
-import { beginAction, actionActive } from "../../shared/hero-actions.js";
+import { beginAction, actionActive, HERO_ACTIONS } from "../../shared/hero-actions.js";
 import { distance } from "../../shared/rope-routing.js";
 export function nearestEnemy(game, p, range, cone = false) {
   return [...game.shades,...(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated&&!game.boss.dyingAt?[game.boss]:[])]
@@ -29,7 +29,7 @@ export function strike(game, p) {
     const length = distance(p, target) || 1;
     p.facing = { x: (target.x - p.x) / length, z: (target.z - p.z) / length };
   }
-  p.pendingStrike = { at: p.attackReady, action: action?.id, power: action ? action.seconds / .55 : 1 };
+  p.pendingStrike = { at: action ? game.time + action.seconds * HERO_ACTIONS[p.hero][action.motion].hit : p.attackReady, action: action?.id, power: action ? action.seconds / .55 : 1 };
   if (!action) resolveStrike(game, p, true);
   return true;
 }

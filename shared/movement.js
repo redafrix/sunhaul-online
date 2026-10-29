@@ -1,5 +1,5 @@
 // Server and client share movement speeds, acceleration and action locks.
-import { movementLocked, DODGE_SECONDS } from './hero-actions.js';
+import { movementLocked, dodgeSpeed } from './hero-actions.js';
 import { terrainHeight, terrainWeights, clamp } from './map-math.js';
 
 export const STEP = 1 / 60;
@@ -19,9 +19,13 @@ export function moveVelocity(player, input, recipe, dt = STEP) {
   }
   if (player.dodgeUntil > player.time) {
     const direction = player.dodgeDirection || player.facing;
-    player.vx = direction.x * 4 / DODGE_SECONDS;
-    player.vz = direction.z * 4 / DODGE_SECONDS;
+    player.vx = direction.x * dodgeSpeed(player);
+    player.vz = direction.z * dodgeSpeed(player);
     return { x: player.vx * dt, z: player.vz * dt };
+  }
+  if (player.dodgeDirection) {
+    player.vx = player.vz = 0;
+    player.dodgeDirection = null;
   }
   const distance = Math.hypot(input.x, input.z);
   const x = distance > 1 ? input.x / distance : input.x;

@@ -1,3 +1,5 @@
+// Shade encounters and authoritative down/revive transitions.
+import { beginAction, clearActions } from '../../shared/hero-actions.js';
 import {strike,enemyStrike} from './combat.js';
 import { seeded,terrainHeight,segmentDistance } from '../../shared/map-math.js';
 import { distance } from '../../shared/rope-routing.js';
@@ -8,7 +10,7 @@ export class Shades {
  spawn(game,type,x,z,zone){const st=stats[type]||stats.wisp,hp=st.hp*(game.difficulty==='gentle'?.75:game.difficulty==='eclipse'?1.2:1),shade={id:`shade-${++this.serial}`,type,x,z,home:{x,z},hp,maxHP:hp,spawnAt:game.time,spawnUntil:game.time+1.2,vx:0,vz:0,facing:{x:0,z:1},zone,stunUntil:0,flying:type==='moth'};game.physics.addPlayer(shade,st.radius,true);shade.controller.setApplyImpulsesToDynamicBodies(false);if(type==='wisp'||type==='moth')shade.collider.setSensor(true);this.shades.push(shade);return shade;}
  command(game,p,cmd) {
   if(cmd==='attack')strike(game,p);
-  if(cmd==='use'||cmd==='interact'){const ally=[...game.players.values()].find(a=>a.id!==p.id&&(!p.team||a.team===p.team)&&a.downedUntil>game.time&&distance(p,a)<2.5);if(ally){ally.hp=60;ally.downedUntil=0;game.teamwork?.(15);}}
+  if(cmd==='use'||cmd==='interact'){const ally=[...game.players.values()].find(a=>a.id!==p.id&&(!p.team||a.team===p.team)&&a.downedUntil>game.time&&distance(p,a)<2.5);if(ally){ally.hp=60;ally.downedUntil=0;clearActions(ally);beginAction(ally,'getUp','getUp',game.time);ally.shieldUntil=ally.action.until;beginAction(p,'revive','revive',game.time,p.commandSeq);game.teamwork?.(15);}}
  }
  before(game,dt) {
   const sun=game.physics.snapshot().sun,radius=game.sun?.radius||18,gentle=game.difficulty==='gentle';
@@ -16,7 +18,7 @@ export class Shades {
   if(game.sun?.radiance===0&&game.tick%180===0&&this.shades.length<48){const a=this.random()*Math.PI*2;this.spawn(game,'wisp',sun.x+Math.cos(a)*radius*1.3,sun.z+Math.sin(a)*radius*1.3);}
   for(const p of game.players.values()){p.hp??=100;if(p.hp<=0&&!(p.downedUntil>0)){p.downedUntil=game.time+(game.keeperCount()===1?3:8);p.rope.attached=false;}
    if(p.downedUntil>game.time||p.downedUntil&&game.difficulty==='eclipse'){p.input={x:0,z:0};p.vx=p.vz=0;}
-   else if(p.downedUntil&&game.difficulty!=='eclipse'){const ownSun=game.sunPositionFor(p),at=game.safeSpawn(ownSun);p.body.setTranslation({x:at.x,y:at.z},true);p.hp=60;p.downedUntil=0;game.physics.sync(p);}
+   else if(p.downedUntil&&game.difficulty!=='eclipse'){const ownSun=game.sunPositionFor(p),at=game.safeSpawn(ownSun);p.body.setTranslation({x:at.x,y:at.z},true);p.hp=60;p.downedUntil=0;clearActions(p);beginAction(p,'getUp','getUp',game.time);p.shieldUntil=p.action.until;game.physics.sync(p);}
   }
   for(const s of this.shades){const nearestSun=game.recipe.mode==='sun-race'?['dawn','dusk'].map(team=>({team,...game.sunPositionFor({team})})).sort((a,b)=>distance(s,a)-distance(s,b))[0]:null,sun=nearestSun||game.sunPositionFor(),sunState=game.sunStateFor(nearestSun),radius=sunState.radius||18;if(s.hp<=0){s.vx=s.vz=0;continue;}if(s.spawnUntil>game.time){s.vx=s.vz=0;continue;}if(s.knockUntil>game.time){game.physics.move(s,{x:s.knock.x*dt,z:s.knock.z*dt});continue;}if(s.stunUntil>game.time){s.vx=s.vz=0;continue;}
    if(s.type==='weaver'&&game.time>=(s.webAt??game.time)){s.webAt=game.time+16;this.spin(game,s);}

@@ -1,5 +1,5 @@
 // Authoritative fixed-step game; shared action windows also drive movement prediction.
-import { actionActive, movementLocked, dodge, hurt } from '../../shared/hero-actions.js';
+import { actionActive, movementLocked, beginAction, dodge, hurt } from '../../shared/hero-actions.js';
 import { resolveStrike } from './combat.js';
 import { PowerMoments } from './power-moments.js';
 import { headlandCheckpoint } from './drowned-king.js';
@@ -23,7 +23,7 @@ import { Guidance } from './guidance.js';
 import { TEAMS } from '../../shared/modes.js';
 import { configuredRecipe,rulesFor } from '../../shared/rules.js';
 export class Game {
- constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(4,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.health=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new PowerMoments(this),new Modes(this));if(options.checkpoint==='headland')headlandCheckpoint(this);}
+ constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(3,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.health=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new PowerMoments(this),new Modes(this));if(options.checkpoint==='headland')headlandCheckpoint(this);}
  keeperCount(team){return Math.max(1,[...this.players.values()].filter(p=>p.connected!==false&&(!team||p.team===team)).length);}
  sunBodyFor(p){return this.physics.sunBodies?.[p?.team]||this.physics.sunBody;}
  sunStateFor(p){return this.recipe.mode==='sun-race'?this.sunStates[p?.team||'dawn']:this.sun;}
@@ -66,7 +66,9 @@ export class Game {
   if(command==='dodge'){dodge(p,this.time,p.commandSeq,Math.hypot(p.input.x,p.input.z)>.1?p.input:p.facing);return;}
   if(actionActive(p,this.time)&&command!=='channel-stop')return;
   if(command==='emote'&&this.time>=(p.emoteReady||0)){p.emoteAt=this.time;p.emoteReady=this.time+4;}
+  const interacted = p.interactedAt;
   for(const system of this.systems)system.command?.(this,p,command);
+  if(p.interactedAt !== interacted && !actionActive(p,this.time))beginAction(p,'interact','interact',this.time,p.commandSeq);
  }
  teamwork(amount){for(const p of this.players.values())if(p.connected!==false)p.ultimate=Math.min(100,(p.ultimate||0)+amount);}
  snapshot() {return {runId:this.runId,tick:this.tick,time:this.time,rules:this.rules,nightRemaining:this.nightRemaining,failureReason:this.failureReason,...this.physics.snapshot(),players:[...this.players.values()].map(({body,collider,controller,input,commands,...p})=>p),...Object.assign({},...this.systems.map(s=>s.snapshot?.(this)||{}))};}

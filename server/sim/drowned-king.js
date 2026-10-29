@@ -321,7 +321,7 @@ export class DrownedKing {
   summon(game) {
     const s = this.state;
     const system = game.systems.find((v) => v.shades);
-    const count = s.phase > 0 ? 3 : 2;
+    const count = Math.ceil((s.phase > 0 ? 3 : 2) * (.7 + .3 * game.keeperCount()));
     for (
       let i = 0;
       i < count && game.shades.filter((v) => v.kingAdd).length < 6;

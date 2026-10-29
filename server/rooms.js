@@ -82,7 +82,7 @@ export class Rooms {
    if(changingCrew&&r.host!==socket.data.playerId)return ack?.({ok:false,error:'Only the host can choose Solo mode and AI Keepers.'});
    if(data.hero!==undefined&&(typeof data.hero!=='string'||!Object.hasOwn(HEROES,data.hero)))return ack?.({ok:false,error:'Unknown Keeper.'});
    if(data.aiKeepers!==undefined&&(!Number.isInteger(data.aiKeepers)||data.aiKeepers<0||data.aiKeepers>2))return ack?.({ok:false,error:'Choose 0, 1 or 2 AI Keepers.'});
-   const p=r.game.players.get(socket.data.playerId);if(data.hero&&data.hero!==p.hero){const cast=r.game.effects.find(e=>e.id===p.channel?.effect);if(cast)cast.until=r.game.time;for(const system of r.game.systems)system.drop?.(r.game,p);p.hero=data.hero;p.channel=null;p.dash=null;p.pullMultiplier=1;p.transformUntil=0;}
+   const p=r.game.players.get(socket.data.playerId);if(data.hero&&data.hero!==p.hero){const cast=r.game.effects.find(e=>e.id===p.channel?.effect);if(cast)cast.until=r.game.time;for(const system of r.game.systems)system.drop?.(r.game,p);p.hero=data.hero;p.channel=null;p.dash=null;p.action=null;p.pendingCast=null;p.pendingStrike=null;p.pullMultiplier=1;p.transformUntil=0;}
    if(data.skin!==undefined){if(typeof data.skin!=='string'||!Object.hasOwn(SKINS,data.skin))return ack?.({ok:false,error:'Unknown palette.'});p.skin=data.skin;}
    if(typeof data.name==='string')p.name=data.name.slice(0,18);
    if(data.mode!==undefined&&!r.game.recipe.mode)r.mode=data.mode==='solo'?'solo':'coop';

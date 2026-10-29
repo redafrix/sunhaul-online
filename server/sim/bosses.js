@@ -6,7 +6,7 @@ export class Bosses {
  ready(game){return (this.spec.requires||[]).every(id=>game.machines[id]?.complete||game.flags[id]);}
  illuminated(game,id){return !!game.machines[id]?.lit;}
  strike(game,p){const s=this.state,sun=game.physics.snapshot().sun;if(this.spec?.kind!=='frostLeviathan'||!s?.active||s.defeated||!s.exposed||distance(p,s)>6||game.sun.radiance<=0||distance(sun,s)>game.sun.radius)return;if(game.time<(p.bossStrikeAt||0))return;p.bossStrikeAt=game.time+.6;s.phaseDamage=Math.min(1,(s.phaseDamage||0)+.12);}
- command(game,p,cmd){if(cmd==='attack'||cmd==='ability-E'&&p.hero==='brann'||cmd==='ability-Q'&&p.hero==='elian')this.strike(game,p);}
+ command(game,p,cmd){if(p.castReleasedAt===game.time&&(cmd==='ability-E'&&p.hero==='brann'||cmd==='ability-Q'&&p.hero==='elian'))this.strike(game,p);}
  after(game,dt){const s=this.state,e=this.spec;if(!s||s.defeated)return;s.active=this.ready(game);if(!s.active)return;
   const sun=game.physics.snapshot().sun,inLens=distance(sun,{x:e.lens[0],z:e.lens[1]})<(e.lensRadius||3.2);
   if(e.kind==='tidewraith'){

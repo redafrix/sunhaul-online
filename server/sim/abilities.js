@@ -1,3 +1,5 @@
+// Server powers release on authored cast markers; movement remains locked during the cast.
+import {beginAction,HERO_ACTIONS} from '../../shared/hero-actions.js';
 import {nearestEnemy} from './combat.js';
 import RAPIER from '@dimforge/rapier2d-compat';
 import { ABILITIES } from '../../shared/heroes.js';
@@ -24,6 +26,15 @@ export class Abilities {
   const target=discovery?null:nearestEnemy(game,p,spec.range||spec.radius||3);
   if(target&&['cone','dash','place','channel','beam'].includes(spec.type)){const d=distance(p,target)||1;p.facing={x:(target.x-p.x)/d,z:(target.z-p.z)/d};}
   if(slot==='R')p.ultimate=0;p.cooldowns[slot]=game.time+(spec.cooldown||1);p.castAt=game.time;p.castSlot=slot;p.hint=null;
+  const action=beginAction(p,'cast',`cast${slot}`,game.time,p.commandSeq);
+  if(action){
+   const release=HERO_ACTIONS[p.hero][`cast${slot}`].release;
+   p.pendingCast={spec,slot,discovery,action:action.id,at:game.time+action.seconds*release};
+  }else this.activate(game,p,spec,slot,discovery);
+ }
+ activate(game,p,spec,slot,discovery){
+  const sunState=game.sunStateFor(p);
+  p.castReleasedAt=game.time;
   let x=p.x,z=p.z;if(spec.type==='place'||spec.kind==='snare'){const reach=spec.kind==='flare'?8:spec.kind==='vinebridge'||spec.kind==='icebridge'?5:3;for(let r=.5;r<=reach;r+=.5){const point={x:p.x+p.facing.x*r,z:p.z+p.facing.z*r};if(!game.physics.lineOfSight(p,point))break;x=point.x;z=point.z;}}
   const ramp=game.recipe.powerMoments?.ramp;
   const onRamp=ramp&&Math.abs(p.x-ramp.a[0])<ramp.width/2+.2&&p.z<ramp.a[1]-4&&p.z>=ramp.b[1]-3.5;
@@ -32,8 +43,8 @@ export class Abilities {
   if(discovery&&spec.kind==='smash')e.discovery=true;
   if(e.kind==='pathfinder')e.radius=Math.hypot(...game.recipe.size);
   if(spec.type==='dash'){
-   if(spec.kind==='blink'){const start={x:p.x,z:p.z};game.physics.move(p,{x:p.facing.x*spec.range,z:p.facing.z*spec.range});const moved=p.controller.computedMovement();p.body.setTranslation({x:p.x+moved.x,y:p.z+moved.y},true);game.physics.sync(p);e.from=start;e.x=p.x;e.z=p.z;p.dodgeUntil=game.time+.25;}
-   else {p.dash={x:p.facing.x,z:p.facing.z,speed:spec.range/.35,until:game.time+.35,damage:spec.damage||0,kind:spec.kind,hits:[]};p.dodgeUntil=game.time+.35;if(spec.kind==='grapple'){e.a={x:p.x,z:p.z};e.b={x:p.x+p.facing.x*spec.range,z:p.z+p.facing.z*spec.range};e.width=1.3;e.radius=1.6;e.ladder=true;}}
+   if(spec.kind==='blink'){const start={x:p.x,z:p.z};game.physics.move(p,{x:p.facing.x*spec.range,z:p.facing.z*spec.range});const moved=p.controller.computedMovement();p.body.setTranslation({x:p.x+moved.x,y:p.z+moved.y},true);game.physics.sync(p);e.from=start;e.x=p.x;e.z=p.z;p.abilityEvadeUntil=game.time+.25;}
+   else {p.dash={x:p.facing.x,z:p.facing.z,speed:spec.range/.35,until:game.time+.35,damage:spec.damage||0,kind:spec.kind,hits:[]};p.abilityEvadeUntil=game.time+.35;if(spec.kind==='grapple'){e.a={x:p.x,z:p.z};e.b={x:p.x+p.facing.x*spec.range,z:p.z+p.facing.z*spec.range};e.width=1.3;e.radius=1.6;e.ladder=true;}}
   }else if(spec.type==='place'){
    if(['stake','grove','winch'].includes(spec.kind))this.solid(game,e,{type:'circle',r:spec.kind==='grove'?.65:spec.kind==='winch'?.45:.25},true);
    if(['icebridge','vinebridge'].includes(spec.kind)){
@@ -54,6 +65,7 @@ export class Abilities {
    const sun=game.sunPositionFor(p);e.x=sun.x;e.z=sun.z;e.radius=spec.radius*(distance(p,sun)<6?1.3:1);
    for(const s of game.shades||[])if(distance(s,sun)<e.radius&&game.physics.lineOfSight(sun,s)){s.hp-=s.type==='brute'?spec.damage*.4:spec.damage;s.stunUntil=game.time+4;}
   }
+  if(game.boss)game.systems.find(system=>system.spec?.kind===game.boss.kind)?.command?.(game,p,`ability-${slot}`);
  }
  solid(game,e,collider,anchor){
   const angle=Math.atan2(-e.dx,e.dz)*180/Math.PI,f=footprint({id:e.id,p:[e.x,0,e.z],r:angle,s:1},{collider,ropeContact:true},.13);
@@ -93,6 +105,13 @@ export class Abilities {
  }
  drop(game,p){const c=p.carry;if(!c)return;const entity=c.type==='prop'?game.physics.props.get(c.id):game.players.get(c.id);if(entity){entity.carriedBy=null;entity.collider.setEnabled(true);entity.body.setTranslation({x:p.x+p.facing.x*1.6,y:p.z+p.facing.z*1.6},true);}p.carry=null;}
  before(game,dt){
+  for(const player of game.players.values()){
+   const pending=player.pendingCast;
+   if(pending&&game.time>=pending.at){
+    player.pendingCast=null;
+    if(player.action?.id===pending.action&&player.hp>0&&!(player.downedUntil>game.time))this.activate(game,player,pending.spec,pending.slot,pending.discovery);
+   }
+  }
   const expired=game.effects.filter(e=>['icebridge','vinebridge','grapple'].includes(e.kind)&&e.until<=game.time&&e.until>game.time-dt-.001);
   for(const p of game.players.values())if(expired.some(e=>e.a&&e.b&&segmentDistance(p.x,p.z,[e.a.x,e.a.z],[e.b.x,e.b.z])<(e.width||1.6)/2)&&terrainHeight(game.recipe,p.x,p.z)<(game.recipe.water?.level??-1)-.15){const spawn=game.recipe.entities.find(e=>e.type==='heroSpawn')?.p||[2,2],safe=game.safeSpawn?.(game.checkpoint||{x:spawn[0],z:spawn[1]})||{x:spawn[0],z:spawn[1]};p.body.setTranslation({x:safe.x,y:safe.z},true);game.physics.sync(p);p.vx=p.vz=0;p.rope.attached=false;p.hint='The crossing faded. You are back on safe ground.';}
   game.effects=game.effects.filter(e=>e.until>game.time||e.permanent);for(const e of game.effects)if(e.until<=game.time)e.light=false;game.anchors=game.anchors.filter(a=>a.permanent||a.until>game.time);

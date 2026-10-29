@@ -129,11 +129,11 @@ export class DrownedKing {
     if (cmd === "attack") s.metrics.attacksPressed++;
     if (
       !cmd.startsWith("ability-") ||
-      p.castAt !== game.time ||
-      p.kingCastAt === p.castAt
+      p.castReleasedAt !== game.time ||
+      p.kingCastAt === p.castReleasedAt
     )
       return;
-    p.kingCastAt = p.castAt;
+    p.kingCastAt = p.castReleasedAt;
     const spec = ABILITIES[p.hero]?.[p.castSlot];
     if (!spec?.damage) return;
     const origin = spec.type === "beam" ? game.sunPositionFor(p) : p;
@@ -344,6 +344,7 @@ export class DrownedKing {
         p.connected === false ||
         p.downedUntil > game.time ||
         p.dodgeUntil > game.time ||
+        p.abilityEvadeUntil > game.time ||
         p.shieldUntil > game.time ||
         p.frontShieldUntil > game.time
       )

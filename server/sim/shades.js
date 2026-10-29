@@ -7,7 +7,7 @@ export class Shades {
  constructor(game){this.shades=[];this.deaths=[];this.webs=[];this.random=seeded(game.recipe.seed+47);this.serial=0;this.spawns=(game.recipe.shadeSpawns||[]).map(s=>({...s,next:1}));game.shades=this.shades;game.webs=this.webs;}
  spawn(game,type,x,z,zone){const st=stats[type]||stats.wisp,hp=st.hp*(game.difficulty==='gentle'?.75:game.difficulty==='eclipse'?1.2:1),shade={id:`shade-${++this.serial}`,type,x,z,home:{x,z},hp,maxHP:hp,spawnAt:game.time,spawnUntil:game.time+1.2,vx:0,vz:0,facing:{x:0,z:1},zone,stunUntil:0,flying:type==='moth'};game.physics.addPlayer(shade,st.radius,true);shade.controller.setApplyImpulsesToDynamicBodies(false);if(type==='wisp'||type==='moth')shade.collider.setSensor(true);this.shades.push(shade);return shade;}
  command(game,p,cmd) {
-  if(cmd==='attack'&&strike(game,p)){for(const w of this.webs)if(distance(p,w)<3)w.hp-=18;}
+  if(cmd==='attack')strike(game,p);
   if(cmd==='use'||cmd==='interact'){const ally=[...game.players.values()].find(a=>a.id!==p.id&&(!p.team||a.team===p.team)&&a.downedUntil>game.time&&distance(p,a)<2.5);if(ally){ally.hp=60;ally.downedUntil=0;game.teamwork?.(15);}}
  }
  before(game,dt) {

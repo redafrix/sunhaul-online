@@ -1,4 +1,5 @@
 // Authoritative target selection, bounded lunges and dodgeable enemy wind-ups.
+import { beginAction, actionActive } from "../../shared/hero-actions.js";
 import { distance } from "../../shared/rope-routing.js";
 export function nearestEnemy(game, p, range, cone = false) {
   return [...game.shades,...(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated&&!game.boss.dyingAt?[game.boss]:[])]
@@ -16,25 +17,36 @@ export function nearestEnemy(game, p, range, cone = false) {
     .sort((a, b) => distance(p, a) - distance(p, b))[0];
 }
 export function strike(game, p) {
+  if (p.pendingStrike?.at <= game.time) resolveStrike(game, p);
   if (game.time < (p.attackReady || 0) || p.downedUntil > game.time) return;
-  p.attackReady = game.time + 0.55;
+  if (actionActive(p, game.time)) return;
+  p.attackCombo = (p.attackCombo || 0) % 3 + 1;
+  const action = beginAction(p, 'attack', `attack${p.attackCombo}`, game.time, p.commandSeq);
+  p.attackAt = game.time;
+  p.attackReady = action?.until ?? game.time + .55;
   const target = nearestEnemy(game, p, 3.5, true);
-  const aim = target ? { x: target.x - p.x, z: target.z - p.z } : p.facing;
-  const length = Math.hypot(aim.x, aim.z) || 1,
-    dx = aim.x / length,
-    dz = aim.z / length;
-  p.facing = { x: dx, z: dz };
-  const travel = game.boss?.kind==='drownedKing'&&game.boss.active ? 0 : target ? Math.min(1.2, Math.max(0, length - (target.kind==='drownedKing'?4:1.25))) : 0;
-  p.strikeLunge = {
-    x: (dx * travel) / 0.12,
-    z: (dz * travel) / 0.12,
-    until: game.time + 0.12,
-  };
+  if (target) {
+    const length = distance(p, target) || 1;
+    p.facing = { x: (target.x - p.x) / length, z: (target.z - p.z) / length };
+  }
+  p.pendingStrike = { at: p.attackReady, action: action?.id, power: action ? action.seconds / .55 : 1 };
+  if (!action) resolveStrike(game, p, true);
+  return true;
+}
+
+export function resolveStrike(game, p, immediate = false) {
+  const pending = p.pendingStrike;
+  if (!pending || !immediate && game.time < pending.at) return;
+  p.pendingStrike = null;
+  if (pending.action && p.action?.id !== pending.action || p.downedUntil > game.time) return;
+  const target = nearestEnemy(game, p, 3.5, true);
+  const dx = p.facing.x;
+  const dz = p.facing.z;
   p.attackTarget = target?.id || null;
   if (target?.kind === 'drownedKing') {
-    game.damageBoss(p,14);
+    game.damageBoss(p,Math.round(14 * pending.power));
   } else if (target) {
-    target.hp -= target.type === "brute" ? 13 : 18;
+    target.hp -= Math.round((target.type === "brute" ? 13 : 18) * pending.power);
     target.hitAt = game.time;
     target.stunUntil = Math.max(target.stunUntil, game.time + 0.18);
     target.knock = { x: dx * 2, z: dz * 2 };
@@ -43,7 +55,8 @@ export function strike(game, p) {
     p.stats.strikes++;
     p.hitAt = game.time;
   }
-  return true;
+  for (const system of game.systems) system.strike?.(game, p);
+  for (const web of game.webs || []) if (distance(p, web) < 3) web.hp -= Math.round(18 * pending.power);
 }
 export function enemyStrike(game, s, nearest) {
   if (s.biting) {
@@ -65,6 +78,7 @@ export function enemyStrike(game, s, nearest) {
         p.connected === false ||
         p.downedUntil > game.time ||
         p.dodgeUntil > game.time ||
+        p.abilityEvadeUntil > game.time ||
         p.shieldUntil > game.time
       )
         continue;

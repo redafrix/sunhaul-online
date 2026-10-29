@@ -24,7 +24,10 @@ export class Modes {
    const shrine=this.state.shrines.find(s=>distance(p,s)<3.2&&game.time>=s.readyAt);
    if(shrine){shrine.owner=p.team;shrine.readyAt=game.time+35;for(const ally of game.players.values())if(ally.team===p.team){ally[shrine.buff==='haul'?'haulUntil':'wardUntil']=game.time+20;ally.ultimate=Math.min(100,ally.ultimate+15);}p.interactedAt=game.time;p.hint=shrine.buff==='haul'?'Crew haul boosted for 20 seconds.':'Crew ropes warded for 20 seconds.';}
   }
-  if(cmd==='attack'&&game.time>=(p.cutReady||0)){
+ }
+ strike(game,p){
+  if(this.kind!=='sun-race')return;
+  if(game.time>=(p.cutReady||0)){
    p.cutReady=game.time+1.2;
    for(const enemy of game.players.values())if(enemy.team!==p.team&&enemy.rope.attached&&!(enemy.wardUntil>game.time)){
     const path=enemy.rope.path||[];if(path.slice(1).some((b,i)=>segmentDistance(p.x,p.z,[path[i].x,path[i].z],[b.x,b.z])<2.3&&game.physics.lineOfSight(p,b))){enemy.rope.attached=false;enemy.rope.tension=0;enemy.rope.cutUntil=game.time+2;p.ultimate=Math.min(100,p.ultimate+8);p.hint='Enemy rope cut — steal its light!';const victim=game.sunStateFor(enemy),own=game.sunStateFor(p),light=Math.min(10,victim.radiance);victim.radiance-=light;own.radiance=Math.min(100,own.radiance+light);this.state.cuts=(this.state.cuts||0)+1;}

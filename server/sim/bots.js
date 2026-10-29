@@ -82,7 +82,7 @@ export class Bots {
     p.botProgress={x:p.x,z:p.z,at:game.time};
     this.paths.delete(p.id);
    }
-   const close=distance(p,target)<(plate||task?.type==='plate'?.45:task?1.5:.65),input={seq:Math.max(++this.seq,p.ack+1),x:close||d<.2?0:dx/d,z:close||d<.2?0:dz/d,sprint:!p.rope.attached&&distance(p,target)>7,commands:[...new Set(commands)]};game.input(p.id,input);
+   const close=distance(p,target)<(plate||task?.type==='plate'?.45:task?1.5:.65),input={seq:Math.max(++this.seq,p.ack+1),x:close||d<.2?0:dx/d,z:close||d<.2?0:dz/d,sprint:!p.rope.attached&&distance(p,target)>7,commands:[...new Set(commands)].sort((a,b)=>(a==='attack')-(b==='attack'))};game.input(p.id,input);
   });
  }
  race(game){

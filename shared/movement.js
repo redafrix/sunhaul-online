@@ -1,3 +1,4 @@
+// Shared authoritative and predicted acceleration; sprint remains an explicit choice.
 import { terrainHeight,terrainWeights,clamp } from './map-math.js';
 export const STEP=1/60;
 export function terrainAt(recipe,x,z) {
@@ -7,7 +8,7 @@ export function terrainAt(recipe,x,z) {
 export function moveVelocity(player,input,recipe,dt=STEP) {
  const d=Math.hypot(input.x,input.z),x=d>1?input.x/d:input.x,z=d>1?input.z/d:input.z;
  const surface=player.waterUntil>player.time?'water':terrainAt(recipe,player.x,player.z),terrain=surface==='mud'?.6:surface==='water'&&player.hero!=='nerali'?.7:1;
- let speed=(player.rope?.attached&&!player.rope.tied?clamp(4.5-(player.rope.tension||0)*2,2.5,4.5):input.sprint?8.5:6)*terrain;
+ let speed=(player.rope?.attached&&!player.rope.tied?clamp(4.5-(player.rope.tension||0)*2,2.5,4.5):input.sprint?6:4.2)*terrain;
  if(player.cargoTow)speed=Math.min(speed,4);
  if(player.hero==='sera')speed*=1.15;if(player.speedBoost)speed*=1.2;
  const ramp=surface==='ice'&&player.hero!=='nerali'?.4:d>.01?(input.sprint?.2:.12):.1,k=1-Math.exp(-dt/ramp);

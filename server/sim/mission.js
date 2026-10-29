@@ -106,7 +106,9 @@ export class Mission {
    this.lastMotion = game.time;
   }
   const charging = Object.values(game.machines).some((s) => s.active && !s.complete && s.progress > 0);
-  this.state.recoveryAvailable = game.recipe.mode !== 'sun-race' && !(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated) && !charging && game.time - this.lastMotion > 20;
+  // A Sun resting in a charging hearth is not stuck: restart the idle clock so recovery never pops up as it wakes.
+  if (charging) this.lastMotion = game.time;
+  this.state.recoveryAvailable = game.recipe.mode !== 'sun-race' && !(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated) && !charging && game.time - this.lastMotion > 40;
   if (crew.length && crew.every((p) => p.downedUntil > 0) && game.difficulty === 'eclipse') {
    this.allDownAt ??= game.time;
    if (game.time - this.allDownAt > 10) {

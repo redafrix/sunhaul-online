@@ -57,6 +57,8 @@ export function resolveStrike(game, p, immediate = false) {
     p.hitAt = game.time;
   }
   for (const system of game.systems) system.strike?.(game, p);
+  // Any Keeper can hack through breakable barricades (four blows a crate); Brann's smash just does it at once.
+  if (!target) game.systems.find((system) => system.breakProps)?.breakProps(game, p, 2.4, Math.round(11 * pending.power), {});
   for (const web of game.webs || []) if (distance(p, web) < 3) web.hp -= Math.round(18 * pending.power);
 }
 export function enemyStrike(game, s, nearest) {

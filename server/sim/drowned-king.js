@@ -71,10 +71,10 @@ export class DrownedKing {
   maxHP(game) {
     return (
       (game.difficulty === "gentle"
-        ? 1500
+        ? 1200
         : game.difficulty === "eclipse"
-          ? 3200
-          : 2100) *
+          ? 2800
+          : 1800) *
       (1 + 0.65 * (game.keeperCount() - 1))
     );
   }

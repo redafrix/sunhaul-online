@@ -1,26 +1,69 @@
-// Local P1 movement against catalog footprints. Server Rapier authority is P2.
-export function moveOnMap(position,dx,dz,radius,colliders,height,waterLevel) {
- const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.18));
- let x=position.x,z=position.z;
- for(let step=0;step<steps;step++){
-  const oldX=x,oldZ=z;x+=dx/steps;z+=dz/steps;
-  for(let pass=0;pass<2;pass++)for(const {placement:p,asset:a}of colliders){
-   const scale=Array.isArray(p.s)?p.s:[p.s??1,p.s??1,p.s??1],c=a.collider,angle=(p.r||0)*Math.PI/180,co=Math.cos(angle),si=Math.sin(angle);
-   if(c.type==='circle'){
-    const rr=c.r*Math.max(scale[0],scale[2])+radius,ox=x-p.p[0],oz=z-p.p[2],d=Math.hypot(ox,oz);
-    if(d<rr){const nx=d>.0001?ox/d:1,nz=d>.0001?oz/d:0;x=p.p[0]+nx*rr;z=p.p[2]+nz*rr;}
-   }else if(c.type==='box'){
-    const relX=x-p.p[0],relZ=z-p.p[2],ox=c.offset?.[0]*scale[0]||0,oz=c.offset?.[1]*scale[2]||0;
-    let lx=co*relX-si*relZ-ox,lz=si*relX+co*relZ-oz;const hx=c.half[0]*scale[0]+radius,hz=c.half[1]*scale[2]+radius;
-    if(Math.abs(lx)<hx&&Math.abs(lz)<hz){if(hx-Math.abs(lx)<hz-Math.abs(lz))lx=(lx<0?-1:1)*hx;else lz=(lz<0?-1:1)*hz;lx+=ox;lz+=oz;x=p.p[0]+co*lx+si*lz;z=p.p[2]-si*lx+co*lz;}
-   }
+// Predicted circular contact uses the server's rotated footprints and rounded box corners.
+import { footprint } from './physics-geometry.js';
+const shapes = new WeakMap();
+
+function shape(entry) {
+  if (!shapes.has(entry)) {
+    const f = footprint(entry.placement, entry.asset);
+    f.co = Math.cos(f.angle);
+    f.si = Math.sin(f.angle);
+    f.reach = f.type === 'circle' ? f.r : Math.hypot(f.hx, f.hz);
+    shapes.set(entry, f);
   }
-  if(height(x,z)<waterLevel+.16){
-   if(height(x,oldZ)>=waterLevel+.16)z=oldZ;
-   else if(height(oldX,z)>=waterLevel+.16)x=oldX;
-   else{x=oldX;z=oldZ;}
+  return shapes.get(entry);
+}
+
+function project(x, z, radius, entry) {
+  const f = shape(entry);
+  const co = f.co;
+  const si = f.si;
+  const dx = x - f.x;
+  const dz = z - f.z;
+  if (Math.abs(dx) > f.reach + radius + .02 || Math.abs(dz) > f.reach + radius + .02) return { x, z };
+  let lx = co * dx + si * dz;
+  let lz = -si * dx + co * dz;
+  const qx = f.type === 'circle' ? 0 : Math.max(-f.hx, Math.min(f.hx, lx));
+  const qz = f.type === 'circle' ? 0 : Math.max(-f.hz, Math.min(f.hz, lz));
+  const ox = lx - qx;
+  const oz = lz - qz;
+  const distance = Math.hypot(ox, oz);
+  const clearance = radius + .02 + (f.type === 'circle' ? f.r : 0);
+  if (distance >= clearance) return { x, z };
+  if (distance > .00001) {
+    lx = qx + ox / distance * clearance;
+    lz = qz + oz / distance * clearance;
+  } else if (f.type === 'circle') {
+    lx = clearance;
+  } else if (f.hx - Math.abs(lx) < f.hz - Math.abs(lz)) {
+    lx = (lx < 0 ? -1 : 1) * (f.hx + clearance);
+  } else {
+    lz = (lz < 0 ? -1 : 1) * (f.hz + clearance);
   }
- }
- position.x=x;position.z=z;position.y=height(x,z);
- return position;
+  return { x: f.x + co * lx - si * lz, z: f.z + si * lx + co * lz };
+}
+
+export function moveOnMap(position, dx, dz, radius, colliders, height, waterLevel) {
+  const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / .18));
+  let x = position.x;
+  let z = position.z;
+  for (let step = 0; step < steps; step++) {
+    const oldX = x;
+    const oldZ = z;
+    const previous = height(x, z);
+    const allowed = (a, b) => height(a, b) >= waterLevel - .15 && Math.abs(height(a, b) - previous) <= 1.4;
+    x += dx / steps;
+    z += dz / steps;
+    for (let pass = 0; pass < 2; pass++) {
+      for (const collider of colliders) ({ x, z } = project(x, z, radius, collider));
+    }
+    if (!allowed(x, z)) {
+      if (allowed(x, oldZ)) z = oldZ;
+      else if (allowed(oldX, z)) x = oldX;
+      else { x = oldX; z = oldZ; }
+    }
+  }
+  position.x = x;
+  position.z = z;
+  position.y = height(x, z);
+  return position;
 }

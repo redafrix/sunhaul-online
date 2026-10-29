@@ -1,5 +1,7 @@
+// Authoritative Rapier contacts and shared visible floor support.
+import { collisionEntries } from '../../shared/map-geometry.js';
 import RAPIER from '@dimforge/rapier2d-compat';
-import { placements,footprint } from '../../shared/physics-geometry.js';
+import { footprint } from '../../shared/physics-geometry.js';
 import { terrainHeight } from '../../shared/map-math.js';
 import { terrainAt,STEP } from '../../shared/movement.js';
 import { onCrossing } from '../../shared/hero-effects.js';
@@ -9,8 +11,8 @@ export class Physics {
  constructor(recipe,catalog) {
   this.recipe=recipe;this.catalog=catalog;this.world=new RAPIER.World({x:0,y:0});this.world.timestep=STEP;
   this.props=new Map();this.contacts=[];this.chunks=new Map();this.solids=new Map();
-  for(const p of placements(recipe)) {
-   const a=catalog[p.a];if(!a||a.collider.type==='none'||p.collide===false)continue;
+  const entries=collisionEntries(recipe,catalog);
+  for(const {placement:p,asset:a} of entries) {if(!a||a.collider.type==='none'||p.collide===false)continue;
    const f=footprint(p,a,.13),key=`${Math.floor(f.x/32)},${Math.floor(f.z/32)}`;
    let body;if(f.dynamic){body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(f.x,f.z).setRotation(f.angle).setLinearDamping(4).setAngularDamping(5).setCcdEnabled(true));}
    else {if(!this.chunks.has(key))this.chunks.set(key,this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed()));body=this.chunks.get(key);}
@@ -42,12 +44,13 @@ export class Physics {
  removePlayer(p) {this.world.removeCharacterController(p.controller);this.world.removeRigidBody(p.body);}
  move(p,delta) {
   const from=p.body.translation(),wanted={x:from.x+delta.x,z:from.y+delta.z};
-  const h=this.floor(wanted.x,wanted.z),previous=this.floor(from.x,from.y);
-  const bridge=this.game?.effects?.some(e=>onCrossing(e,wanted.x,wanted.z,this.game.time));
-  if(!p.flying&&!bridge&&(h<(this.recipe.water?.level??-1)-.15||h-previous>1.4)){
-   if(this.floor(wanted.x,from.y)<(this.recipe.water?.level??-1)-.15)delta.x=0;
-   if(this.floor(from.x,wanted.z)<(this.recipe.water?.level??-1)-.15)delta.z=0;
-   if(h-previous>1.4)delta={x:0,z:0};
+  const previous=this.floor(from.x,from.y);
+  const allowed=(x,z)=>p.flying||this.game?.effects?.some(e=>onCrossing(e,x,z,this.game.time))
+   ||this.floor(x,z)>=(this.recipe.water?.level??-1)-.15&&Math.abs(this.floor(x,z)-previous)<=1.4;
+  if(!allowed(wanted.x,wanted.z)){
+   if(allowed(wanted.x,from.y))delta.z=0;
+   else if(allowed(from.x,wanted.z))delta.x=0;
+   else delta={x:0,z:0};
   }
   p.controller.computeColliderMovement(p.collider,{x:delta.x,y:delta.z},RAPIER.QueryFilterFlags.EXCLUDE_SENSORS,p.collider.collisionGroups());
   const moved=p.controller.computedMovement();p.body.setNextKinematicTranslation({x:from.x+moved.x,y:from.y+moved.y});
@@ -80,7 +83,7 @@ export class Physics {
  }
  snapshot() {
   const t=this.sunBody.translation(),v=this.sunBody.linvel();
-  return {sun:{x:t.x,z:t.y,vx:v.x,vz:v.y},props:[...this.props].map(([id,r])=>{const p=r.body.translation();return {id,x:p.x,z:p.y,angle:r.body.rotation(),asset:r.p.a,s:r.p.s,carriedBy:r.carriedBy||null};})};
+  return {sun:{x:t.x,z:t.y,vx:v.x,vz:v.y},props:[...this.props].map(([id,r])=>{const p=r.body.translation(),angle=r.body.rotation(),scale=Array.isArray(r.p.s)?r.p.s:Array(3).fill(r.p.s??1),ox=(r.a.collider.offset?.[0]||0)*scale[0],oz=(r.a.collider.offset?.[1]||0)*scale[2];return {id,x:p.x-Math.cos(angle)*ox+Math.sin(angle)*oz,z:p.y-Math.sin(angle)*ox-Math.cos(angle)*oz,angle,asset:r.p.a,s:r.p.s,carriedBy:r.carriedBy||null};})};
  }
  clearSpawn(p) {
   for(const {collider} of this.solids.values()) {

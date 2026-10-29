@@ -14,9 +14,9 @@ export class Machines {
    if(e.block){const desc=RAPIER.ColliderDesc.cuboid(...e.block).setTranslation(...e.p).setRotation(-(e.rotation||0)*Math.PI/180);const collider=game.physics.world.createCollider(desc);this.blockers.set(e.id,collider);game.physics.solids.set(collider.handle,{p:{id:`machine-${e.id}`},f:{},collider});}
   }
  }
- nearest(p){return this.entities.filter(e=>e.type!=='well'&&distance(p,{x:e.p[0],z:e.p[1]})<(e.type==='cradle'?6:3.2)).sort((a,b)=>distance(p,{x:a.p[0],z:a.p[1]})-distance(p,{x:b.p[0],z:b.p[1]}))[0];}
+ nearest(p,game){return this.entities.filter(e=>!(game?.recipe.mission?.secrets?.includes(e.id)&&game.flags[e.id])&&e.type!=='well'&&distance(p,{x:e.p[0],z:e.p[1]})<(e.type==='cradle'?6:3.2)).sort((a,b)=>distance(p,{x:a.p[0],z:a.p[1]})-distance(p,{x:b.p[0],z:b.p[1]}))[0];}
  command(game,p,cmd) {
-  if(!['use','interact','turn-back'].includes(cmd))return;const e=this.nearest(p);if(!e||game.time-(p.lastUse??-10)<.2)return;
+  if(!['use','interact','turn-back'].includes(cmd))return;const e=this.nearest(p,game);if(!e||game.time-(p.lastUse??-10)<.2)return;
   if(!game.physics.lineOfSight(p,{x:e.p[0],z:e.p[1]},new Set([`machine-${e.id}`,e.propId])))return;
   const s=this.states[e.id],rate=(p.hero==='ivo'?2:1)*(s.overdriveUntil>game.time?3:1);p.lastUse=game.time;p.interactedAt=game.time;s.operator=p.id;
   if(e.requires&&!e.requires.every(id=>this.states[id]?.complete||game.flags[id])){p.hint=e.hint||'Finish the preceding objective first.';return;}
@@ -26,7 +26,8 @@ export class Machines {
    if(e.chargeSeconds){s.active=true;return;}
    if(!s.locked){s.locked=s.complete=true;s.progress=1;game.systems.find(a=>a.restore)?.restore(game,e);game.teamwork?.(25);}return;
   }
-  if(e.type==='shadowLock'||e.type==='receiver'||e.type==='plate')return;
+  if(e.type==='shadowLock'){p.hint=e.hint||'Move the Sun to align the statue’s shadow with the glyph.';return;}
+  if(e.type==='receiver'||e.type==='plate')return;
   if(['mirror','prismSocket'].includes(e.type)){s.angle+=(cmd==='turn-back'?-1:1)*Math.PI/6;s.active=true;}
   else if(e.type==='capstan'&&e.ropeRoute){if(s.route.length<e.ropeRoute.length){p.hint=`Wrap the marked posts: ${e.ropeRoute.map((id,i)=>`${i+1}`).join(' → ')}`;return;}s.active=true;s.turns+=rate;}
   else if(e.type==='crane'){

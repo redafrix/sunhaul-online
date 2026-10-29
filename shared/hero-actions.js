@@ -109,6 +109,7 @@ export function predictAction(player, packet, recipe, snapshot) {
         && (!player.team || other.team === player.team) && other.downedUntil > now
         && Math.hypot(player.x - other.x, player.z - other.z) < 2.5);
       const machine = recipe.entities?.some(entity => entity.type !== 'well'
+        && !(recipe.mission?.secrets?.includes(entity.id) && snapshot.flags?.[entity.id])
         && snapshot.machines?.[entity.id]
         && Math.hypot(player.x - entity.p[0], player.z - entity.p[1]) < (entity.type === 'cradle' ? 6 : 3.2));
       if (ally || machine) beginAction(player, ally ? 'revive' : 'interact', ally ? 'revive' : 'interact', now, packet.seq);

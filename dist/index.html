@@ -5,8 +5,8 @@
  <meta name="theme-color" content="#14232d"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/ui/sun-192.png"><title>SUNHAUL · Keepers of the Dawn</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='21' fill='%23e9b85c'/%3E%3C/svg%3E">
   <script type="module" crossorigin src="/assets/preload-helper-BlTxHScW.js"></script>
   <script type="module" crossorigin src="/assets/world-audio-ClKb44Se.js"></script>
-  <script type="module" crossorigin src="/assets/app-shell-BPON8iI0.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-Dn1nKJO1.css">
+  <script type="module" crossorigin src="/assets/app-shell-Bu-S4asI.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BWhAPVDj.css">
 </head>
 <body>
  <main id="game-container"><canvas id="game-canvas" aria-label="SUNHAUL. Move with WASD or the touch stick. Take a rope and carry the Sun."></canvas>
@@ -17,7 +17,7 @@
   <div id="joystick" aria-label="Movement joystick"><span></span></div>
   <div class="hud-actions"><div class="action-buttons"><button id="rope-button"><img class="game-icon" src="/ui/icons/rope.svg" alt=""><span class="button-text">Take rope <kbd data-binding="rope">F</kbd></span></button><button id="attack-button"><img class="game-icon" src="/ui/icons/sword.svg" alt=""><span class="button-text">Attack <kbd data-binding="attack">J</kbd></span></button><button id="dodge-button"><img class="game-icon" src="/ui/icons/dash.svg" alt=""><span class="button-text">Dodge <kbd data-binding="dodge">Space</kbd></span></button></div>
   <button id="use-button" hidden><span class="button-text">Interact <kbd data-binding="use">G</kbd></span></button>
-  </div><div id="prompt" role="status" hidden></div>
+  </div><div id="context-messages"><div id="prompt" role="status" hidden></div></div>
  </div>
  <div id="loading" role="status" aria-live="polite"><div class="loading-sun"><img class="game-icon" src="/ui/icons/sun.svg" alt="Little Sun"></div><p class="eyebrow">KEEPERS OF THE DAWN</p><h2>At the edge of morning.</h2><p id="loading-text">Finding your crew…</p><progress id="loading-progress" max="100" value="0" aria-label="Mission loading"></progress><p class="loading-tip">Ropes pull harder together.</p><button id="retry-button" hidden>Try again</button><button id="new-crew-button" hidden>Start a fresh crew</button></div>
  </main>

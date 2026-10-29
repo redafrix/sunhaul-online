@@ -33,6 +33,7 @@ export class Mission {
   this.positions = new Map();
  }
  recover(game) {
+  const collected=(game.recipe.mission?.secrets||[]).filter(id=>game.flags[id]);
   const spawn = game.recipe.entities.find((e) => e.type === 'sunSpawn')?.p || [0, 0];
   const at = game.checkpoint || { x: spawn[0], z: spawn[1] };
   if (this.saved) {
@@ -46,6 +47,7 @@ export class Mission {
    game.flags = {};
    game.restored = [];
   }
+  for(const id of collected){game.flags[id]=true;if(game.machines[id])Object.assign(game.machines[id],{complete:true,progress:1});}
   game.physics.sunBody.setTranslation({ x: at.x, y: at.z }, true);
   game.physics.sunBody.setLinvel({ x: 0, y: 0 }, true);
   Object.assign(game.sun, { radiance: 100, gutterFor: 0, mood: 'curious' });

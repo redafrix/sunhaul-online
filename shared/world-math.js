@@ -1,6 +1,6 @@
 // Shared terrain, visible harbour decks and machine-created crossings.
 import { sceneryHeight } from './map-geometry.js';
-import { terrainHeight,segmentDistance } from './map-math.js';
+import { terrainHeight,segmentDistance,inPolygon } from './map-math.js';
 export function onBridge(e,x,z){return e.a&&e.b&&segmentDistance(x,z,e.a,e.b)<(e.width||6)/2;}
 export function worldHeight(recipe,x,z,machines={}){
  let h=sceneryHeight(recipe,x,z,terrainHeight(recipe,x,z));
@@ -12,5 +12,7 @@ export function worldHeight(recipe,x,z,machines={}){
   const t=Math.min(1,(ramp.a[1]-z)/(ramp.a[1]-ramp.b[1]));
   h=Math.max(h,.81+t*ramp.rise);
  }
+ const gap=recipe.powerMoments?.jetty?.gap;
+ if(gap&&inPolygon(x,z,gap))h=Math.min(h,(recipe.water?.level??-1)-2);
  return h;
 }

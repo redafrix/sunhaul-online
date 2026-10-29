@@ -8,8 +8,8 @@ export function localPoint(item, x, z) {
   const angle = (item.r || 0) * Math.PI / 180;
   const dx = x - item.p[0];
   const dz = z - item.p[2];
-  return { x: Math.cos(angle) * dx - Math.sin(angle) * dz,
-    z: Math.sin(angle) * dx + Math.cos(angle) * dz };
+  return { x: Math.cos(angle) * dx - Math.sin(angle) * dz - (item.floorOffset?.[0] || 0),
+    z: Math.sin(angle) * dx + Math.cos(angle) * dz - (item.floorOffset?.[1] || 0) };
 }
 
 export function mapGeometry(recipe) {
@@ -41,7 +41,7 @@ export function mapGeometry(recipe) {
   for (const prop of props) {
     if (prop.a !== 'pirate/Environment_Dock' || prop.walkable === false) continue;
     const scale = Array.isArray(prop.s) ? prop.s : Array(3).fill(prop.s ?? 1);
-    floors.push({ ...prop, half: [1.09 * scale[0], 1.32 * scale[2]], height: prop.p[1] + scale[1] });
+    floors.push({ ...prop, half: [1.092 * scale[0], 1.3285 * scale[2]], floorOffset: [-.092 * scale[0], -.0205 * scale[2]], height: prop.p[1] + scale[1] });
   }
   for (const [index, planter] of (dressing.planters || []).entries()) {
     box(`planter-${index}`, planter, [(planter.size?.[0] || 2.4) / 2, (planter.size?.[1] || .7) / 2]);
@@ -50,7 +50,12 @@ export function mapGeometry(recipe) {
     box(`crane-base-${index}`, crane, [1.4, 1.3]);
   }
   for (const [index, cliff] of (dressing.cliffs || []).entries()) {
-    const floor = terrainHeight(recipe, cliff.p[0], cliff.p[2]);
+    let floor = terrainHeight(recipe, cliff.p[0], cliff.p[2]);
+    for (const surface of floors) {
+      if (surface.stair) continue;
+      const local = localPoint(surface, cliff.p[0], cliff.p[2]);
+      if (Math.abs(local.x) <= surface.half[0] && Math.abs(local.z) <= surface.half[1]) floor = Math.max(floor, surface.height);
+    }
     if (cliff.p[1] + cliff.size[1] > floor + .3) {
       box(`cliff-${index}`, cliff, [cliff.size[0] * .34, cliff.size[2] * .34]);
     }

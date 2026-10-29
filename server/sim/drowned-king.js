@@ -4,9 +4,12 @@ import { terrainHeight } from "../../shared/map-math.js";
 import { ABILITIES } from "../../shared/heroes.js";
 const moves = ["slam", "sweep", "summon", "ink_wave", "eclipse"];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// The encounter is authored relative to the King's recipe position (z grows toward the causeway).
+const kingZ = (game) => game.recipe.boss.p[1];
 export function headlandCheckpoint(game) {
   if (game.recipe.id !== "w1m1") return;
   for (const id of [
+    "tidewake-beacon",
     "first-light",
     "harbour-capstan",
     "market-cradle",
@@ -20,15 +23,15 @@ export function headlandCheckpoint(game) {
     });
   }
   game.machines["beacon-mirror"].angle = 0;
-  game.restored = ["zone_quay", "zone_market"].map((id) => ({
+  game.restored = [["zone_strand", 6, 79], ["zone_quay", 0, 0], ["zone_market", 0, -59]].map(([id, x, z]) => ({
     id,
-    x: 0,
-    z: id === "zone_quay" ? 0 : -59,
+    x,
+    z,
     radius: 22,
     at: game.time,
   }));
-  game.checkpoint = { x: 0, z: -94 };
-  game.physics.sunBody.setTranslation({ x: 0, y: -94 }, true);
+  game.checkpoint = { x: 0, z: kingZ(game) + 20 };
+  game.physics.sunBody.setTranslation({ x: 0, y: kingZ(game) + 20 }, true);
   game.physics.sunBody.setLinvel({ x: 0, y: 0 }, true);
 }
 export class DrownedKing {
@@ -68,10 +71,10 @@ export class DrownedKing {
   maxHP(game) {
     return (
       (game.difficulty === "gentle"
-        ? 1850
+        ? 1500
         : game.difficulty === "eclipse"
-          ? 3550
-          : 2600) *
+          ? 3200
+          : 2100) *
       (1 + 0.65 * (game.keeperCount() - 1))
     );
   }
@@ -155,7 +158,7 @@ export class DrownedKing {
     s.nextAttack = s.introUntil + 1;
     s.nextChannel = s.introUntil + 22;
     s.metrics.phases.push({ phase: 1, at: game.time });
-    game.checkpoint = { x: 0, z: -94 };
+    game.checkpoint = { x: 0, z: kingZ(game) + 20 };
     for (const p of game.players.values()) {
       p.hp = 100;
       p.downedUntil = 0;
@@ -185,7 +188,7 @@ export class DrownedKing {
     if (s.defeated) return;
     const sun = game.sunPositionFor();
     if (!s.active) {
-      if (sun.z < -90 && game.machines["beacon-receiver"]?.complete)
+      if (sun.z < kingZ(game) + 24 && game.machines["beacon-receiver"]?.complete)
         this.begin(game);
       else return;
     }
@@ -221,7 +224,7 @@ export class DrownedKing {
       terrainHeight(game.recipe, sun.x, sun.z) <
       (game.recipe.water?.level ?? -1) - 0.1;
     if (washedAway) {
-      game.physics.sunBody.setTranslation({ x: s.x, y: -107 }, true);
+      game.physics.sunBody.setTranslation({ x: s.x, y: kingZ(game) + 7 }, true);
       game.physics.sunBody.setLinvel({ x: 0, y: 0 }, true);
       s.metrics.washbacks = (s.metrics.washbacks || 0) + 1;
       for (const p of game.players.values())
@@ -303,11 +306,11 @@ export class DrownedKing {
     if (kind === "ink_wave")
       Object.assign(a, {
         x: 0,
-        z: clamp(p.z, -110, -96),
+        z: clamp(p.z, kingZ(game) + 4, kingZ(game) + 18),
         width: 36,
         depth: 2.4,
       });
-    if (kind === "summon") Object.assign(a, { x: s.x - 5, z: -110 });
+    if (kind === "summon") Object.assign(a, { x: s.x - 5, z: kingZ(game) + 4 });
     if (kind === "eclipse") {
       a.until = game.time + 3600;
       s.nextChannel =
@@ -331,10 +334,12 @@ export class DrownedKing {
         game,
         "lurker",
         s.x - 5 + i * 4,
-        -110,
+        kingZ(game) + 4,
         "zone_lighthouse",
       );
       shade.kingAdd = true;
+      // Ink spawn are brittle: the fight is the King, the adds only pressure the hauler.
+      shade.hp = shade.maxHP = Math.round(shade.maxHP * 0.5);
     }
   }
   impact(game, a) {
@@ -362,7 +367,9 @@ export class DrownedKing {
           ? 0.6
           : game.difficulty === "eclipse"
             ? 1.35
-            : 1);
+            : 0.85) *
+        // A lone Keeper has nobody to revive them: the King hits a little softer.
+        (game.keeperCount() === 1 ? 0.85 : 1);
       p.hp = Math.max(0, p.hp - damage);
       p.hurtAt = game.time;
       s.metrics.playerDamage += damage;

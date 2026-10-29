@@ -4,7 +4,9 @@ import {strike,enemyStrike} from './combat.js';
 import { seeded,terrainHeight,segmentDistance } from '../../shared/map-math.js';
 import { distance } from '../../shared/rope-routing.js';
 import RAPIER from '@dimforge/rapier2d-compat';
-const stats={wisp:{hp:24,speed:2.9,radius:.26},lurker:{hp:65,speed:3.2,radius:.48},brute:{hp:150,speed:1.6,radius:.95},moth:{hp:40,speed:3.8,radius:.3},weaver:{hp:90,speed:2.2,radius:.6},hound:{hp:42,speed:4.2,radius:.4}};
+// Sunlight only scorches (hp/s) and exposes Shades; Keepers finish them.
+const SCORCH={wisp:4,lurker:2.5,brute:3,moth:.8,weaver:3,hound:3};
+const stats={wisp:{hp:30,speed:3.1,radius:.26},lurker:{hp:65,speed:3.2,radius:.48},brute:{hp:150,speed:1.6,radius:.95},moth:{hp:40,speed:3.8,radius:.3},weaver:{hp:90,speed:2.2,radius:.6},hound:{hp:42,speed:4.2,radius:.4}};
 export class Shades {
  constructor(game){this.shades=[];this.deaths=[];this.webs=[];this.random=seeded(game.recipe.seed+47);this.serial=0;this.spawns=(game.recipe.shadeSpawns||[]).map(s=>({...s,next:1}));game.shades=this.shades;game.webs=this.webs;}
  spawn(game,type,x,z,zone){const st=stats[type]||stats.wisp,hp=st.hp*(game.difficulty==='gentle'?.75:game.difficulty==='eclipse'?1.2:1),shade={id:`shade-${++this.serial}`,type,x,z,home:{x,z},hp,maxHP:hp,spawnAt:game.time,spawnUntil:game.time+1.2,vx:0,vz:0,facing:{x:0,z:1},zone,stunUntil:0,flying:type==='moth'};game.physics.addPlayer(shade,st.radius,true);shade.controller.setApplyImpulsesToDynamicBodies(false);if(type==='wisp'||type==='moth')shade.collider.setSensor(true);this.shades.push(shade);return shade;}
@@ -32,14 +34,15 @@ export class Shades {
     if(rope&&distance(s,rope.point)<1.25){if(s.wasBiting&&game.time>=s.windupUntil)rope.p.rope.fray=Math.min(1,(rope.p.rope.fray||0)+dt/6*game.rules.fray);s.biting=true;}else s.biting=false;
    }else if(s.type==='hound')target=nearest||sun;
    else if(s.type==='brute')target=nearest&&distance(nearest,s.home)<12?nearest:s.home;
+   else if(s.type==='wisp'&&nearest&&distance(s,nearest)<9&&d>radius*.3)target=nearest;
    else if(d<radius*.85&&sunState.radiance>25)target={x:s.x+(s.x-sun.x)*2,z:s.z+(s.z-sun.z)*2};
    else if(d>radius+1&&sunState.radiance>25)target={x:sun.x+(s.x-sun.x)/d*(radius+.8),z:sun.z+(s.z-sun.z)/d*(radius+.8)};
    enemyStrike(game,s,nearest);
    const attacking=s.strikePending||game.time<(s.windupUntil||0)+.25;
    if(attacking)target=s.attackTarget||target;
-   const dx=target.x-s.x,dz=target.z-s.z,len=Math.hypot(dx,dz)||1,speed=(attacking||s.biting)?0:stats[s.type].speed*game.rules.shadeSpeed;
+   const dx=target.x-s.x,dz=target.z-s.z,len=Math.hypot(dx,dz)||1,speed=(attacking||s.biting)?0:stats[s.type].speed*game.rules.shadeSpeed*(s.litUntil>game.time?.7:1);
    s.vx=dx/len*speed;s.vz=dz/len*speed;if(!attacking)s.facing={x:dx/len,z:dz/len};game.physics.move(s,{x:s.vx*dt,z:s.vz*dt});
-   if((s.type!=='brute'||s.wave)&&d<radius&&game.physics.lineOfSight(sun,s))s.hp-=dt*(s.boss?5:s.type==='brute'?8:s.type==='wisp'?24:s.type==='moth'?.8:s.type==='weaver'?6:12);
+   if(d<radius&&game.physics.lineOfSight(sun,s)){s.litUntil=game.time+.3;if(s.type!=='brute'||s.wave)s.hp-=dt*(s.boss?5:SCORCH[s.type]??2);}
    const bastion=game.effects?.some(e=>e.kind==='bastion'&&e.until>game.time&&distance(sun,e)<e.radius);
    if(d<2.2&&!bastion)sunState.radiance=Math.max(0,sunState.radiance-dt*(s.type==='brute'?6:3)*game.rules.sunDamage*game.rules.shadeDamage*(.8+.2*game.keeperCount())*(gentle?.35:1));
    for(const beam of game.beams||[])if(segmentDistance(s.x,s.z,[beam.a.x,beam.a.z],[beam.b.x,beam.b.z])<1.1)s.hp-=dt*(s.type==='brute'?45:65);

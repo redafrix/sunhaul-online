@@ -1,7 +1,7 @@
 const finiteVector=(v,n)=>Array.isArray(v)&&v.length===n&&v.every(x=>Number.isFinite(x)&&Math.abs(x)<=2000);
 export function validateRecipe(map,catalog) {
  if(!map||!/^[a-z0-9_-]{1,32}$/.test(map.id)||!/^[a-z0-9_-]{1,32}$/.test(map.world||''))throw new Error('Invalid map identity');
- if(!finiteVector(map.size,2)||map.size.some(n=>n<32||n>320)||!Number.isInteger(map.seed))throw new Error('Invalid map size or seed');
+ if(!finiteVector(map.size,2)||map.size.some(n=>n<32||n>400)||!Number.isInteger(map.seed))throw new Error('Invalid map size or seed');
  if(!map.terrain||!Number.isFinite(map.terrain.base))throw new Error('Terrain required');
  for(const p of map.terrain.plateaus||[])if(!Array.isArray(p.poly)||p.poly.length<3||p.poly.some(v=>!finiteVector(v,2))||!Number.isFinite(p.h))throw new Error('Invalid plateau');
  for(const p of map.terrain.paths||[])if(!Array.isArray(p.pts)||p.pts.length<2||p.pts.some(v=>!finiteVector(v,2))||!Number.isFinite(p.w)||p.w<=0)throw new Error('Invalid path');

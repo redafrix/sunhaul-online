@@ -46,7 +46,8 @@ export function resolveStrike(game, p, immediate = false) {
   if (target?.kind === 'drownedKing') {
     game.damageBoss(p,Math.round(14 * pending.power));
   } else if (target) {
-    target.hp -= Math.round((target.type === "brute" ? 13 : 18) * pending.power);
+    // Sunlit Shades are exposed and take heavier blows.
+    target.hp -= Math.round((target.type === "brute" ? 13 : 18) * pending.power * (target.litUntil > game.time ? 1.35 : 1));
     target.hitAt = game.time;
     target.stunUntil = Math.max(target.stunUntil, game.time + 0.18);
     target.knock = { x: dx * 2, z: dz * 2 };
@@ -94,7 +95,7 @@ export function enemyStrike(game, s, nearest) {
         distance(p, s) < reach + 1
       ) {
         p.hp -=
-          (brute ? 24 : 10) *
+          (brute ? 26 : s.type === "hound" ? 9 : 11) *
           game.rules.shadeDamage *
           (0.8 + 0.2 * game.keeperCount());
         p.hurtAt = game.time;

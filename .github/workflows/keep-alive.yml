@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Wake public game servers
         run: |
-          curl -fsS --retry 1 --max-time 50 https://sunhaul-online.onrender.com/health || true
+          curl -fsS --retry 1 --max-time 50 https://sunhaul-online-artr.onrender.com/health || true

@@ -9,6 +9,7 @@ import { nextMission } from '../shared/campaign.js';
 import { missionObjective } from '../shared/mission-flow.js';
 import { HERO_DEFS } from '../shared/heroes.js';
 import { STEP } from '../shared/movement.js';
+const SLOW_KEYS=['props','machines','objectives','rules','mode','powerMoments','world','flags','restored','clues','destroyed','routeHints','anchors','webs','mission','guidance'];
 const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export class Rooms {
  constructor(io,recipe,catalog,recipes=new Map([[recipe.id,recipe]])){this.io=io;this.recipe=recipe;this.recipes=recipes;this.catalog=catalog;this.rooms=new Map();this.last=performance.now();this.accumulator=0;}
@@ -20,6 +21,10 @@ export class Rooms {
  metadata(room) {return {code:room.code,checkpoint:room.checkpoint,public:room.public,host:room.host,map:room.game.recipe.id,world:room.game.recipe.world,missionName:room.game.recipe.name,capacity:room.game.recipe.mode==='sun-race'?room.game.teamSize*2:HERO_IDS.length,teamSize:room.game.teamSize,mode:room.mode,aiKeepers:room.aiKeepers,bots:[...room.game.players.values()].filter(p=>p.bot).map(p=>({id:p.id,hero:p.hero,name:p.name})),difficulty:room.game.difficulty,mutators:room.game.mutators,seats:[...room.seats.values()].map(s=>({id:s.id,name:room.game.players.get(s.id)?.name,hero:room.game.players.get(s.id)?.hero,team:room.game.players.get(s.id)?.team,connected:!!s.socketId,host:s.id===room.host})),link:`/?room=${room.code}&map=${room.game.recipe.id}`};}
  paused(room){const clients=[...room.seats.values()].filter(s=>s.socketId).map(s=>this.io.sockets.sockets.get(s.socketId)).filter(Boolean);return !clients.some(s=>s.data.ready)||(room.mode==='solo'&&clients.length===1&&!!clients[0].data.paused);}
  snapshot(room){return {...room.game.snapshot(),paused:this.paused(room)};}
+ // Live broadcasts leave out slow-changing parts that did not change (clients keep their last copy); a full keyframe every 2 s.
+ liveSnapshot(room){const s=this.snapshot(room);room.slowCache??={};const full=(room.keyframe=(room.keyframe||0)+1)%40===1;let omitted=0;
+  for(const key of SLOW_KEYS){if(!(key in s))continue;const text=JSON.stringify(s[key]);if(!full&&room.slowCache[key]===text){delete s[key];omitted++;}else room.slowCache[key]=text;}
+  if(omitted)s.partial=true;return s;}
  reset(room,recipe=room.game.baseRecipe,difficulty=room.game.difficulty,options={}){const old=room.game,reload=recipe.id!==old.recipe.id||difficulty!==old.difficulty||JSON.stringify(options.mutators??old.mutators)!==JSON.stringify(old.mutators);if(reload){room.hostReloadUntil=Date.now()+15000;for(const seat of room.seats.values()){const client=this.io.sockets.sockets.get(seat.socketId);if(client){client.data.ready=false;client.leave(room.code+':live');}}}room.game=new Game(recipe,this.catalog,{difficulty,teamSize:options.teamSize??old.teamSize,mutators:options.mutators??old.mutators,checkpoint:room.checkpoint});room.mode=recipe.mode||(room.mode==='solo'?'solo':'coop');for(const seat of room.seats.values()){const player=room.game.addPlayer(seat.id,old.players.get(seat.id));const occupied=new Set([...room.game.players.values()].filter(other=>other.id!==player.id&&other.team===player.team).map(other=>other.hero));if(occupied.has(player.hero))player.hero=HERO_IDS.find(hero=>!occupied.has(hero));player.connected=!!seat.socketId;}room.game.setBots(recipe.mode?0:room.aiKeepers);old.physics.free();this.io.to(room.code).emit('mission_reset');this.io.to(room.code).emit('room_state',this.metadata(room));}
  join(socket,data={},ack=()=>{}) {
   data=data&&typeof data==='object'?data:{};const requested=typeof data.room==='string'?data.room.trim().toUpperCase():'';let room=requested?this.rooms.get(requested):null;
@@ -66,7 +71,7 @@ export class Rooms {
   });
   socket.emit('connected',{socketId:socket.id,serverTime:Date.now(),build:'v4-p5'});
   const listen=listenGuard(socket);
-  listen('join_room',(data,ack)=>this.join(socket,data,typeof ack==='function'?ack:()=>{}));
+  listen('join_room',(data,ack)=>{const reply=typeof ack==='function'?ack:()=>{};if(this.traffic?.full&&!this.rooms.has(data?.room))return reply({ok:false,error:'The harbour is full this month. Please come back soon!'});this.join(socket,data,reply);});
   // Keep the bootstrap snapshot/crew messages during loading, then subscribe to
   // live snapshots. They otherwise compete with asset downloads on slow links.
   listen('client_ready',()=>{const room=this.rooms.get(socket.data.room);if(!room||socket.data.ready)return;socket.data.ready=true;socket.join(room.code+':live');socket.emit('snapshot',this.snapshot(room));});
@@ -120,7 +125,7 @@ export class Rooms {
    for(const room of connectedRooms){
     if(!this.paused(room))room.game.step();
     room.snapshotStep=(room.snapshotStep||0)+1;
-    if(room.snapshotStep%3===0)this.io.to(room.code+':live').emit('snapshot',this.snapshot(room));
+    if(room.snapshotStep%3===0)this.io.to(room.code+':live').emit('snapshot',this.liveSnapshot(room));
    }
    this.accumulator-=STEP;
   }

@@ -10,6 +10,7 @@ import { Rooms } from './rooms.js';
 import { CAMPAIGN } from '../shared/campaign.js';
 import { MODE_MAPS } from '../shared/modes.js';
 import { networkInterfaces } from 'node:os';
+import { trackTraffic } from './traffic.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,7 @@ const app = express();
 app.disable('x-powered-by');
 app.use(compression({threshold:1024,filter:(req,res)=>/^(text\/|application\/(json|javascript)|model\/gltf\+json)/.test(String(res.getHeader('Content-Type')))}));
 const server = http.createServer(app);
+const traffic = trackTraffic(server);
 const io = new SocketIOServer(server, {
   cors: { origin: '*' },
   maxHttpBufferSize: 16384,
@@ -30,7 +32,7 @@ const io = new SocketIOServer(server, {
 
 const catalog=JSON.parse(await readFile(path.join(ROOT,'assets/catalog.json'),'utf8'));
 const recipes=new Map(await Promise.all([...CAMPAIGN,...MODE_MAPS].map(async m=>[m.id,validateRecipe(JSON.parse(await readFile(path.join(ROOT,'maps',m.world,m.id+'.json'),'utf8')),catalog)])));
-const rooms=new Rooms(io,recipes.get('w1m1'),catalog,recipes);
+const rooms=new Rooms(io,recipes.get('w1m1'),catalog,recipes);rooms.traffic=traffic;
 const tickSamples=[];
 const build=process.env.BUILD_SHA||await readFile(path.join(ROOT,'package.json'),'utf8').then(s=>JSON.parse(s).build||'dev');
 let tickCount=0,metricAt=performance.now(),cpuAt=process.cpuUsage();
@@ -60,7 +62,7 @@ app.get('/api/crews/:code', (req, res) => {
  res.json(rooms.metadata(room));
 });
 app.get('/api/adventure',(_req,res)=>res.json(CAMPAIGN));
-app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,build,phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,...metrics,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
+app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,build,trafficGB:+traffic.gigabytes.toFixed(2),phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,...metrics,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
 if(!isProd){
  app.put('/api/maps/:world/:id',express.json({limit:'2mb'}),async(req,res)=>{
   try {

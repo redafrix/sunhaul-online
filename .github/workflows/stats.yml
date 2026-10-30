@@ -1,0 +1,20 @@
+# Snapshot SUNHAUL play stats and bandwidth so a free host's restarts lose nothing.
+name: Save stats
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and commit
+        run: |
+          curl -fsS --max-time 60 https://sunhaul-online-artr.onrender.com/stats.json -o stats.json || exit 0
+          python3 -c "import json;d=json.load(open('stats.json'));assert 'visitors' in d" || exit 0
+          git init -q snap && mv stats.json snap/ && cd snap
+          git config user.name stats-bot && git config user.email stats-bot@users.noreply.github.com
+          git checkout -q -b stats-data && git add stats.json && git commit -qm "stats $(date -u +%FT%TZ)"
+          git push -q -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git stats-data

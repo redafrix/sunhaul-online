@@ -11,6 +11,8 @@ import { CAMPAIGN } from '../shared/campaign.js';
 import { MODE_MAPS } from '../shared/modes.js';
 import { networkInterfaces } from 'node:os';
 import { trackTraffic } from './traffic.js';
+import { createAnalytics } from './analytics.js';
+import { statsPage } from './stats-page.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +34,9 @@ const io = new SocketIOServer(server, {
 
 const catalog=JSON.parse(await readFile(path.join(ROOT,'assets/catalog.json'),'utf8'));
 const recipes=new Map(await Promise.all([...CAMPAIGN,...MODE_MAPS].map(async m=>[m.id,validateRecipe(JSON.parse(await readFile(path.join(ROOT,'maps',m.world,m.id+'.json'),'utf8')),catalog)])));
-const rooms=new Rooms(io,recipes.get('w1m1'),catalog,recipes);rooms.traffic=traffic;
+const rooms=new Rooms(io,recipes.get('w1m1'),catalog,recipes);rooms.traffic=traffic;const analytics=createAnalytics(traffic);rooms.analytics=analytics;
+app.get('/stats.json',(_req,res)=>{res.set('Cache-Control','no-store');res.set('Access-Control-Allow-Origin','*');res.json(analytics.report());});
+app.get('/stats',(_req,res)=>{res.set('Cache-Control','no-store');res.type('html').send(statsPage(analytics.report()));});
 const tickSamples=[];
 const build=process.env.BUILD_SHA||await readFile(path.join(ROOT,'package.json'),'utf8').then(s=>JSON.parse(s).build||'dev');
 let tickCount=0,metricAt=performance.now(),cpuAt=process.cpuUsage();

@@ -20,6 +20,9 @@ export function trackTraffic(server) {
   };
   setInterval(flush, 15000).unref();
   return {
+    // Restore this month's count from a saved snapshot after a restart (free hosts lose /tmp).
+    restore(saved) { if (saved?.month === state.month && saved.bytes > state.bytes) state.bytes = saved.bytes; },
+    snapshot() { return { month: state.month, bytes: state.bytes, capGB: CAP / 1e9 }; },
     get gigabytes() { return state.bytes / 1e9; },
     // New crews are refused near the cap; players already in a game finish normally.
     get full() { return CAP > 0 && state.bytes >= CAP * 0.95; },

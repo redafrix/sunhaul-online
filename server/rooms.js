@@ -5,6 +5,7 @@ import { listenGuard } from './socket-guard.js';
 import { Game } from './sim/game.js';
 import { SKINS } from '../shared/cosmetics.js';
 import { HERO_IDS, HEROES } from '../shared/abilities.js';
+import { blockedHeroes, MAX_CREW } from '../shared/heroes.js';
 import { nextMission } from '../shared/campaign.js';
 import { missionObjective } from '../shared/mission-flow.js';
 import { HERO_DEFS } from '../shared/heroes.js';
@@ -18,26 +19,26 @@ export class Rooms {
   const recipe=this.recipes.get(options.map)||this.recipe;const game=new Game(recipe,this.catalog,options);
   const room={code,game,seats:new Map(),host:null,created:Date.now(),emptySince:null,lastActive:Date.now(),checkpoint:options.checkpoint==='headland'?'headland':options.checkpoint==='finale'&&process.env.SUNHAUL_DEV_FINALE==='1'?'finale':undefined,public:options.quickMatch===true,aiKeepers:Number.isInteger(options.aiKeepers)?Math.max(0,Math.min(2,options.aiKeepers)):0,mode:recipe.mode||(options.mode==='solo'?'solo':'coop')};this.rooms.set(code,room);console.log(JSON.stringify({event:'room_start',room:code,public:room.public,map:recipe.id}));return room;
  }
- metadata(room) {return {code:room.code,checkpoint:room.checkpoint,public:room.public,host:room.host,map:room.game.recipe.id,world:room.game.recipe.world,missionName:room.game.recipe.name,capacity:room.game.recipe.mode==='sun-race'?room.game.teamSize*2:HERO_IDS.length,teamSize:room.game.teamSize,mode:room.mode,aiKeepers:room.aiKeepers,bots:[...room.game.players.values()].filter(p=>p.bot).map(p=>({id:p.id,hero:p.hero,name:p.name})),difficulty:room.game.difficulty,mutators:room.game.mutators,seats:[...room.seats.values()].map(s=>({id:s.id,name:room.game.players.get(s.id)?.name,hero:room.game.players.get(s.id)?.hero,team:room.game.players.get(s.id)?.team,connected:!!s.socketId,host:s.id===room.host})),link:`/?room=${room.code}&map=${room.game.recipe.id}`};}
+ metadata(room) {return {code:room.code,checkpoint:room.checkpoint,public:room.public,host:room.host,map:room.game.recipe.id,world:room.game.recipe.world,missionName:room.game.recipe.name,capacity:room.game.recipe.mode==='sun-race'?room.game.teamSize*2:MAX_CREW,teamSize:room.game.teamSize,mode:room.mode,aiKeepers:room.aiKeepers,bots:[...room.game.players.values()].filter(p=>p.bot).map(p=>({id:p.id,hero:p.hero,name:p.name})),difficulty:room.game.difficulty,mutators:room.game.mutators,seats:[...room.seats.values()].map(s=>({id:s.id,name:room.game.players.get(s.id)?.name,hero:room.game.players.get(s.id)?.hero,team:room.game.players.get(s.id)?.team,connected:!!s.socketId,host:s.id===room.host})),link:`/?room=${room.code}&map=${room.game.recipe.id}`};}
  paused(room){const clients=[...room.seats.values()].filter(s=>s.socketId).map(s=>this.io.sockets.sockets.get(s.socketId)).filter(Boolean);return !clients.some(s=>s.data.ready)||(room.mode==='solo'&&clients.length===1&&!!clients[0].data.paused);}
  snapshot(room){return {...room.game.snapshot(),paused:this.paused(room)};}
  // Live broadcasts leave out slow-changing parts that did not change (clients keep their last copy); a full keyframe every 2 s.
  liveSnapshot(room){const s=this.snapshot(room);room.slowCache??={};const full=(room.keyframe=(room.keyframe||0)+1)%40===1;let omitted=0;
   for(const key of SLOW_KEYS){if(!(key in s))continue;const text=JSON.stringify(s[key]);if(!full&&room.slowCache[key]===text){delete s[key];omitted++;}else room.slowCache[key]=text;}
   if(omitted)s.partial=true;return s;}
- reset(room,recipe=room.game.baseRecipe,difficulty=room.game.difficulty,options={}){const old=room.game,reload=recipe.id!==old.recipe.id||difficulty!==old.difficulty||JSON.stringify(options.mutators??old.mutators)!==JSON.stringify(old.mutators);if(reload){room.hostReloadUntil=Date.now()+15000;for(const seat of room.seats.values()){const client=this.io.sockets.sockets.get(seat.socketId);if(client){client.data.ready=false;client.leave(room.code+':live');}}}room.game=new Game(recipe,this.catalog,{difficulty,teamSize:options.teamSize??old.teamSize,mutators:options.mutators??old.mutators,checkpoint:room.checkpoint});room.mode=recipe.mode||(room.mode==='solo'?'solo':'coop');for(const seat of room.seats.values()){const player=room.game.addPlayer(seat.id,old.players.get(seat.id));const occupied=new Set([...room.game.players.values()].filter(other=>other.id!==player.id&&other.team===player.team).map(other=>other.hero));if(occupied.has(player.hero))player.hero=HERO_IDS.find(hero=>!occupied.has(hero));player.connected=!!seat.socketId;}room.game.setBots(recipe.mode?0:room.aiKeepers);old.physics.free();this.io.to(room.code).emit('mission_reset');this.io.to(room.code).emit('room_state',this.metadata(room));}
+ reset(room,recipe=room.game.baseRecipe,difficulty=room.game.difficulty,options={}){const old=room.game,reload=recipe.id!==old.recipe.id||difficulty!==old.difficulty||JSON.stringify(options.mutators??old.mutators)!==JSON.stringify(old.mutators);if(reload){room.hostReloadUntil=Date.now()+15000;for(const seat of room.seats.values()){const client=this.io.sockets.sockets.get(seat.socketId);if(client){client.data.ready=false;client.leave(room.code+':live');}}}room.game=new Game(recipe,this.catalog,{difficulty,teamSize:options.teamSize??old.teamSize,mutators:options.mutators??old.mutators,checkpoint:room.checkpoint});room.mode=recipe.mode||(room.mode==='solo'?'solo':'coop');for(const seat of room.seats.values()){const player=room.game.addPlayer(seat.id,old.players.get(seat.id));const occupied=blockedHeroes([...room.game.players.values()].filter(other=>other.id!==player.id&&other.team===player.team).map(other=>other.hero));if(occupied.has(player.hero))player.hero=HERO_IDS.find(hero=>!occupied.has(hero));player.connected=!!seat.socketId;}room.game.setBots(recipe.mode?0:room.aiKeepers);old.physics.free();this.io.to(room.code).emit('mission_reset');this.io.to(room.code).emit('room_state',this.metadata(room));}
  join(socket,data={},ack=()=>{}) {
   data=data&&typeof data==='object'?data:{};const requested=typeof data.room==='string'?data.room.trim().toUpperCase():'';let room=requested?this.rooms.get(requested):null;
   if(requested&&!room)return ack({ok:false,error:'Room not found. Check the five-character code.'});
-  if(!room&&data.quickMatch===true)room=[...this.rooms.values()].filter(r=>r.public&&r.game.recipe.id==='w1m1'&&!r.game.failed&&!r.game.mission.complete&&r.seats.size<HERO_IDS.length&&[...r.seats.values()].some(s=>s.socketId)&&(missionObjective(r.game.recipe,{machines:r.game.machines,flags:r.game.flags,mission:r.game.mission,sun:r.game.sunPositionFor()},null)?.index??0)===0).sort((a,b)=>b.created-a.created)[0];
+  if(!room&&data.quickMatch===true)room=[...this.rooms.values()].filter(r=>r.public&&r.game.recipe.id==='w1m1'&&!r.game.failed&&!r.game.mission.complete&&r.seats.size<MAX_CREW&&[...r.seats.values()].some(s=>s.socketId)&&(missionObjective(r.game.recipe,{machines:r.game.machines,flags:r.game.flags,mission:r.game.mission,sun:r.game.sunPositionFor()},null)?.index??0)===0).sort((a,b)=>b.created-a.created)[0];
   if(!room){if(this.rooms.size>=40)return ack({ok:false,error:'All crew berths are busy. Join an existing room.'});room=this.create(data);}
   let seat=[...room.seats.values()].find(s=>(s.token===data.token&&(!s.expires||s.expires>Date.now()))||(socket.data.room===room.code&&s.socketId===socket.id));
   if(!seat&&room.game.recipe.mode==='sun-race'){const rival=[...room.game.players.values()].find(p=>p.raceRival);if(rival){room.game.removePlayer(rival.id);room.game.modeState.aiRival=false;}}
-  const capacity=room.game.recipe.mode==='sun-race'?room.game.teamSize*2:HERO_IDS.length;
+  const capacity=room.game.recipe.mode==='sun-race'?room.game.teamSize*2:MAX_CREW;
   if(!seat&&room.seats.size>=capacity)return ack({ok:false,error:'This crew is full. Each Keeper has one place.'});
   if(socket.data.room&&socket.data.room!==room.code)this.leave(socket,true);
   if(!seat){const id=randomUUID();seat={id,token:randomUUID(),socketId:null};room.seats.set(id,seat);const player=room.game.addPlayer(id,{...data,team:undefined});
-   const occupied=new Set([...room.game.players.values()].filter(p=>p.id!==id&&!p.bot&&p.team===player.team).map(p=>p.hero));
+   const occupied=blockedHeroes([...room.game.players.values()].filter(p=>p.id!==id&&!p.bot&&p.team===player.team).map(p=>p.hero));
    if(occupied.has(player.hero))player.hero=HERO_IDS.find(hero=>!occupied.has(hero));
    player.connected=true;
   }
@@ -71,7 +72,7 @@ export class Rooms {
   });
   socket.emit('connected',{socketId:socket.id,serverTime:Date.now(),build:'v4-p5'});
   const listen=listenGuard(socket);
-  listen('join_room',(data,ack)=>{const reply=typeof ack==='function'?ack:()=>{};if(this.traffic?.full&&!this.rooms.has(data?.room))return reply({ok:false,error:'The harbour is full this month. Please come back soon!'});this.join(socket,data,reply);});
+  listen('join_room',(data,ack)=>{const reply=typeof ack==='function'?ack:()=>{};if(this.traffic?.full&&!this.rooms.has(data?.room))return reply({ok:false,error:'The harbour is full this month. Please come back soon!'});this.join(socket,data,result=>{if(result?.ok)this.analytics?.start(socket,data,result,this.rooms.get(result.room)?.game.players.get(result.playerId)?.hero);reply(result);});});
   // Keep the bootstrap snapshot/crew messages during loading, then subscribe to
   // live snapshots. They otherwise compete with asset downloads on slow links.
   listen('client_ready',()=>{const room=this.rooms.get(socket.data.room);if(!room||socket.data.ready)return;socket.data.ready=true;socket.join(room.code+':live');socket.emit('snapshot',this.snapshot(room));});
@@ -82,7 +83,7 @@ export class Rooms {
   listen('restart_mission',ack=>{const r=this.rooms.get(socket.data.room);if(!r||r.host!==socket.data.playerId)return ack?.({ok:false,error:'Only the host can restart the mission.'});if(r.game.failed&&r.game.recipe.mission){r.game.retryCheckpoint();this.io.to(r.code).emit('mission_reset');}else this.reset(r);ack?.({ok:true});});
   listen('return_sun',ack=>{const r=this.rooms.get(socket.data.room);if(!r||!r.game.mission.recoveryAvailable||r.game.mission.complete)return ack?.({ok:false,error:'Keep hauling toward the next cradle.'});r.game.retryCheckpoint();this.io.to(r.code).emit('mission_reset');ack?.({ok:true});});
   listen('next_mission',ack=>{const r=this.rooms.get(socket.data.room);if(!r||r.host!==socket.data.playerId)return ack?.({ok:false,error:'Only the host can continue the journey.'});if(r.game.recipe.mode||!r.game.mission.complete||r.game.failed)return ack?.({ok:false,error:'Finish this Adventure mission before continuing.'});const next=nextMission(r.game.recipe.id),recipe=this.recipes.get(next?.id);if(!recipe)return ack?.({ok:false,error:'You have reached the end of this harbour mission.'});this.reset(r,recipe);ack?.({ok:true,map:recipe.id});});
-  listen('select_mission',(data,ack)=>{const r=this.rooms.get(socket.data.room);if(!r||r.host!==socket.data.playerId)return ack?.({ok:false,error:'Only the host can choose the mission.'});const recipe=this.recipes.get(data?.map);if(!recipe)return ack?.({ok:false,error:'Unknown map.'});if(recipe.mode!=='sun-race'&&r.seats.size>HERO_IDS.length)return ack?.({ok:false,error:'Adventure crews have three different Keepers.'});if(recipe.mode==='sun-race'&&r.seats.size>Math.max(1,Math.min(HERO_IDS.length,Number(data?.teamSize)||r.game.teamSize))*2)return ack?.({ok:false,error:'Choose a team size with enough seats for this crew.'});this.reset(r,recipe,data?.difficulty||r.game.difficulty,data||{});ack?.({ok:true,map:recipe.id});});
+  listen('select_mission',(data,ack)=>{const r=this.rooms.get(socket.data.room);if(!r||r.host!==socket.data.playerId)return ack?.({ok:false,error:'Only the host can choose the mission.'});const recipe=this.recipes.get(data?.map);if(!recipe)return ack?.({ok:false,error:'Unknown map.'});if(recipe.mode!=='sun-race'&&r.seats.size>MAX_CREW)return ack?.({ok:false,error:'Adventure crews hold up to four Keepers.'});if(recipe.mode==='sun-race'&&r.seats.size>Math.max(1,Math.min(HERO_IDS.length,Number(data?.teamSize)||r.game.teamSize))*2)return ack?.({ok:false,error:'Choose a team size with enough seats for this crew.'});this.reset(r,recipe,data?.difficulty||r.game.difficulty,data||{});ack?.({ok:true,map:recipe.id});});
   listen('ping',point=>this.rooms.get(socket.data.room)?.game.ping(point));
   listen('crew_options',(data,ack)=>{
    const r=this.rooms.get(socket.data.room);if(!r)return ack?.({ok:false,error:'Join a crew first.'});
@@ -92,7 +93,7 @@ export class Rooms {
    if(data.hero!==undefined&&(typeof data.hero!=='string'||!Object.hasOwn(HEROES,data.hero)))return ack?.({ok:false,error:'Unknown Keeper.'});
    if(data.aiKeepers!==undefined&&(!Number.isInteger(data.aiKeepers)||data.aiKeepers<0||data.aiKeepers>2))return ack?.({ok:false,error:'Choose 0, 1 or 2 AI Keepers.'});
    const p=r.game.players.get(socket.data.playerId);
-   if(data.hero&&[...r.game.players.values()].some(other=>other.id!==p.id&&!other.bot&&other.team===p.team&&other.hero===data.hero))return ack?.({ok:false,code:'HERO_TAKEN',hero:p.hero,error:'That Keeper is already chosen. Choose another companion.'});
+   if(data.hero&&blockedHeroes([...r.game.players.values()].filter(other=>other.id!==p.id&&!other.bot&&other.team===p.team).map(other=>other.hero)).has(data.hero))return ack?.({ok:false,code:'HERO_TAKEN',hero:p.hero,error:'That Keeper is already chosen. Choose another companion.'});
    if(data.hero&&data.hero!==p.hero){const cast=r.game.effects.find(e=>e.id===p.channel?.effect);if(cast)cast.until=r.game.time;for(const system of r.game.systems)system.drop?.(r.game,p);p.hero=data.hero;clearActions(p);p.pullMultiplier=1;p.transformUntil=0;}
    if(data.skin!==undefined){if(typeof data.skin!=='string'||!Object.hasOwn(SKINS,data.skin))return ack?.({ok:false,error:'Unknown palette.'});p.skin=data.skin;}
    if(typeof data.name==='string')p.name=data.name.slice(0,18);
@@ -113,7 +114,7 @@ export class Rooms {
     seat.announced=true;if(r.seats.size>1)this.io.to(r.code).emit('crew_joined',{hero:HERO_DEFS[p.hero].name});}
    this.io.to(r.code).emit('room_state',this.metadata(r));ack?.({ok:true,hero:p.hero});
   });
-  listen('disconnect',()=>this.leave(socket));
+  listen('disconnect',()=>{this.analytics?.end(socket);this.leave(socket);});
  }
  close(room){if(!this.rooms.has(room.code))return;room.game.physics.free();this.rooms.delete(room.code);console.log(JSON.stringify({event:'room_end',room:room.code,seconds:Math.round((Date.now()-room.created)/1000)}));}
  advance() {

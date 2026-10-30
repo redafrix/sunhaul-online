@@ -19,6 +19,14 @@ export const HERO_DEFS={
   abilities:{Q:ability('Smash','cone','smash','Smash cracked walls and boulders, hurl crates and strike Shades in a four-metre cone.',{range:4,damage:48,cooldown:7}),E:ability('Ember Shield','area','embershield','Raise a frontal shield that deflects Shade attacks and keeps the Sun warm for five seconds.',{radius:3,duration:5,cooldown:10}),R:ability('Forge Heart','transform','forge','For ten seconds pull three times harder, burn a trail and protect the crew from heat.',{duration:10,radius:5,damage:18})}}
 };
 export const HERO_IDS=['mara','sera','brann'];
+// A crew holds up to four Keepers: the first three must differ; the fourth may double one hero (never three alike).
+export const MAX_CREW=4;
+export function blockedHeroes(others){
+ if(others.length<HERO_IDS.length)return new Set(others);
+ const count={};for(const h of others)count[h]=(count[h]||0)+1;
+ const doubled=Object.values(count).some(n=>n>=2);
+ return new Set(HERO_IDS.filter(h=>(count[h]||0)>=2||((count[h]||0)===1&&doubled)));
+}
 export const HEROES=Object.fromEntries(HERO_IDS.map(id=>[id,`${HERO_DEFS[id].name} · ${HERO_DEFS[id].title}`]));
 export const ABILITIES=Object.fromEntries(Object.keys(HERO_DEFS).map(id=>[id,HERO_DEFS[id].abilities]));
 export const ABILITY_ASSETS={stake:'pirate/Prop_Anchor',winch:'pirate/Prop_Anchor',sunbot:'fantasy/Lantern_Wall',prism:'fantasy/Shield_Wooden',flare:'fantasy/Torch_Metal',grove:'nature/CommonTree_1',icebridge:'pirate/Environment_Dock',vinebridge:'pirate/Environment_Dock',grapple:'pirate/Environment_Dock'};

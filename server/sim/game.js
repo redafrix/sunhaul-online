@@ -2,7 +2,7 @@
 import { actionActive, movementLocked, beginAction, dodge, hurt } from '../../shared/hero-actions.js';
 import { resolveStrike } from './combat.js';
 import { PowerMoments } from './power-moments.js';
-import { headlandCheckpoint } from './drowned-king.js';
+import { headlandCheckpoint, finaleCheckpoint } from './drowned-king.js';
 import { randomUUID } from 'node:crypto';
 import { SKINS } from '../../shared/cosmetics.js';
 import { Physics } from './physics.js';
@@ -23,7 +23,7 @@ import { Guidance } from './guidance.js';
 import { TEAMS } from '../../shared/modes.js';
 import { configuredRecipe,rulesFor } from '../../shared/rules.js';
 export class Game {
- constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(3,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.health=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new PowerMoments(this),new Modes(this));if(options.checkpoint==='headland')headlandCheckpoint(this);}
+ constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(3,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.health=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new PowerMoments(this),new Modes(this));if(options.checkpoint==='headland'||options.checkpoint==='finale')headlandCheckpoint(this);if(options.checkpoint==='finale')finaleCheckpoint(this);}
  keeperCount(team){return Math.max(1,[...this.players.values()].filter(p=>p.connected!==false&&(!team||p.team===team)).length);}
  sunBodyFor(p){return this.physics.sunBodies?.[p?.team]||this.physics.sunBody;}
  sunStateFor(p){return this.recipe.mode==='sun-race'?this.sunStates[p?.team||'dawn']:this.sun;}

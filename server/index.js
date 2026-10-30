@@ -62,7 +62,7 @@ app.get('/api/crews/:code', (req, res) => {
  res.json(rooms.metadata(room));
 });
 app.get('/api/adventure',(_req,res)=>res.json(CAMPAIGN));
-app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,build,trafficGB:+traffic.gigabytes.toFixed(2),phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,...metrics,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
+app.get('/health',(_req,res)=>{res.set('Cache-Control','no-store');res.set('Access-Control-Allow-Origin','*');res.json({ok:true,build,trafficGB:+traffic.gigabytes.toFixed(2),phase:'P6',mode:isProd?'release':'dev',rooms:rooms.rooms.size,...metrics,tickMs:Math.round(Math.max(0,...tickSamples)*100)/100});});
 if(!isProd){
  app.put('/api/maps/:world/:id',express.json({limit:'2mb'}),async(req,res)=>{
   try {

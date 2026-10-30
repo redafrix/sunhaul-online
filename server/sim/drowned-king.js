@@ -34,6 +34,13 @@ export function headlandCheckpoint(game) {
   game.physics.sunBody.setTranslation({ x: 0, y: kingZ(game) + 20 }, true);
   game.physics.sunBody.setLinvel({ x: 0, y: 0 }, true);
 }
+// Local press captures only (SUNHAUL_DEV_FINALE=1): the King is beaten, the Sun waits in the Lighthouse lens.
+export function finaleCheckpoint(game) {
+  const lens = game.recipe.entities.find((e) => e.id === "dawn-lens");
+  game.flags[game.recipe.boss.id] = true;
+  game.physics.sunBody.setTranslation({ x: lens.p[0], y: lens.p[1] }, true);
+  game.checkpoint = { x: lens.p[0], z: lens.p[1] + 2 };
+}
 export class DrownedKing {
   constructor(game) {
     const e = game.recipe.boss;

@@ -43,7 +43,5 @@ export function moveVelocity(player, input, recipe, dt = STEP) {
   player.vx += (x * speed - player.vx) * blend;
   player.vz += (z * speed - player.vz) * blend;
   if (distance > .1) player.facing = { x: x / (Math.hypot(x, z) || 1), z: z / (Math.hypot(x, z) || 1) };
-  const aim = Math.hypot(input.fx || 0, input.fz || 0);
-  if (aim > .1) player.facing = { x: input.fx / aim, z: input.fz / aim };
   return { x: player.vx * dt, z: player.vz * dt };
 }

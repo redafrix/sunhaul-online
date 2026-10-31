@@ -11,7 +11,7 @@ export class Ropes {
    if(r.attached)p.rope={attached:false,tension:0,fray:r.fray||0,nodes:[]};
    else if(distance(p,sun)<3.7)p.rope={attached:true,tension:0,length:Math.min(3.2,game.rules.ropeMax*.5),max:game.rules.ropeMax,fray:0,nodes:[],path:[sun,{x:p.x,z:p.z}]};
   }
-  if(cmd==='reel-in'&&r.attached)r.length=Math.max(2,r.length-.18);
+  if(cmd==='reel-in'&&r.attached)r.length=Math.max(2.8,r.length-.18);
   if(cmd==='reel-out'&&r.attached)r.length=Math.min(r.max,r.length+.18);
   if(cmd==='tie'&&r.attached){
    if(r.tied){r.tied=null;r.nodes=[];return;}

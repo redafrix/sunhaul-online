@@ -1,8 +1,8 @@
 // Authoritative fixed-step game; shared action windows also drive movement prediction.
-import { actionActive, movementLocked, beginAction, dodge, hurt } from '../../shared/hero-actions.js';
+import { actionActive, attackCanInterrupt, beginAction, dodge, hurt } from '../../shared/hero-actions.js';
 import { resolveStrike } from './combat.js';
 import { PowerMoments } from './power-moments.js';
-import { headlandCheckpoint, finaleCheckpoint } from './drowned-king.js';
+import { headlandCheckpoint, finaleCheckpoint, arenaCheckpoint } from './drowned-king.js';
 import { randomUUID } from 'node:crypto';
 import { SKINS } from '../../shared/cosmetics.js';
 import { Physics } from './physics.js';
@@ -10,7 +10,6 @@ import { Ropes } from './ropes.js';
 import { SunSystems } from './sun.js';
 import { Machines } from './machines.js';
 import { Mission } from './mission.js';
-import { Bots } from './bots.js';
 import { Abilities } from './abilities.js';
 import { HEROES } from '../../shared/abilities.js';
 import { Shades } from './shades.js';
@@ -23,7 +22,7 @@ import { Guidance } from './guidance.js';
 import { TEAMS } from '../../shared/modes.js';
 import { configuredRecipe,rulesFor } from '../../shared/rules.js';
 export class Game {
- constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(3,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.health=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.unshift(new Bots(this));this.systems.push(new Mission(this),new Guidance(),new PowerMoments(this),new Modes(this));if(options.checkpoint==='headland'||options.checkpoint==='finale')headlandCheckpoint(this);if(options.checkpoint==='finale')finaleCheckpoint(this);}
+ constructor(recipe,catalog,options={}){this.runId=randomUUID();this.baseRecipe=recipe;this.rules=rulesFor(options.difficulty,options.mutators);this.mutators=this.rules.mutators;this.recipe=recipe=configuredRecipe(recipe,this.mutators);this.catalog=catalog;this.difficulty=this.rules.id;this.teamSize=Math.max(1,Math.min(3,Math.floor(Number(options.teamSize))||1));this.physics=new Physics(recipe,catalog);this.players=new Map();this.health=new Map();this.time=0;this.tick=0;this.systems=[new Ropes(),new SunSystems()];this.sun=this.systems[1].state;this.sunStates={dawn:this.sun,dusk:{...this.sun}};this.physics.sunCollider.setMass(this.rules.sunMass);if(this.physics.rivalCollider)this.physics.rivalCollider.setMass(this.rules.sunMass);for(const body of Object.values(this.physics.sunBodies))body.recomputeMassPropertiesFromColliders();this.systems.push(new Machines(this),new Puzzles(this),new Abilities(this),new Shades(this),new WorldRules(this),new Bosses(this));this.physics.game=this;this.systems.push(new Mission(this),new Guidance(),new PowerMoments(this),new Modes(this));if(['headland','finale','arena'].includes(options.checkpoint))headlandCheckpoint(this);if(options.checkpoint==='finale')finaleCheckpoint(this);if(options.checkpoint==='arena')arenaCheckpoint(this);}
  keeperCount(team){return Math.max(1,[...this.players.values()].filter(p=>p.connected!==false&&(!team||p.team===team)).length);}
  sunBodyFor(p){return this.physics.sunBodies?.[p?.team]||this.physics.sunBody;}
  sunStateFor(p){return this.recipe.mode==='sun-race'?this.sunStates[p?.team||'dawn']:this.sun;}
@@ -31,7 +30,7 @@ export class Game {
  addPlayer(id,options={}) {
   const counts=TEAMS.map(t=>[...this.players.values()].filter(p=>p.team===t).length),team=this.recipe.mode==='sun-race'?(TEAMS.includes(options.team)?options.team:counts[0]<=counts[1]?'dawn':'dusk'):null;
   const s=this.recipe.entities.find(e=>e.type==='heroSpawn'&&(!team||e.team===team))?.p||[2,2],seat=this.players.size;
-  const p={id,name:typeof options.name==='string'?options.name.slice(0,18):'Keeper',hero:typeof options.hero==='string'&&Object.hasOwn(HEROES,options.hero)?options.hero:'mara',bot:!!options.bot,x:s[0]+seat%3*.85,z:s[1]+Math.floor(seat/3)*.9,vx:0,vz:0,facing:{x:0,z:-1},time:this.time,ack:0,input:{x:0,z:0,sprint:false},commands:[],rope:{attached:false,tension:0},dodgeReady:0,ultimate:0,hp:100,cooldowns:{},action:null};
+  const p={id,name:typeof options.name==='string'?options.name.slice(0,18):'Keeper',hero:typeof options.hero==='string'&&Object.hasOwn(HEROES,options.hero)?options.hero:'mara',x:s[0]+seat%3*.85,z:s[1]+Math.floor(seat/3)*.9,vx:0,vz:0,facing:{x:0,z:-1},time:this.time,ack:0,input:{x:0,z:0,sprint:false},commands:[],rope:{attached:false,tension:0},dodgeReady:0,ultimate:0,hp:100,cooldowns:{},action:null};
   p.team=team;const sun=this.sunPositionFor(p),spot=['w1m1','twin-docks','last-light-harbour'].includes(this.recipe.id)||this.time>1?this.safeSpawn(sun):{x:p.x,z:p.z};p.x=spot.x;p.z=spot.z;const d=Math.hypot(sun.x-p.x,sun.z-p.z)||1;p.facing={x:(sun.x-p.x)/d,z:(sun.z-p.z)/d};p.skin=Object.hasOwn(SKINS,options.skin)?options.skin:'original';this.physics.addPlayer(p);this.players.set(id,p);return p;
  }
  removePlayer(id){const p=this.players.get(id);if(p){for(const s of this.systems)s.drop?.(this,p);this.physics.removePlayer(p);this.players.delete(id);this.health.delete(id);}}
@@ -46,9 +45,10 @@ export class Game {
   for(const player of this.players.values())this.health.set(player.id,player.hp);
   for(const system of this.systems)system.before?.(this,dt);
   for(const p of this.players.values()) {
-   p.time=this.time;if(this.time-(p.lastInput??0)>.3&&!p.bot)p.input={x:0,z:0,sprint:false};
+   p.time=this.time;if(this.time-(p.lastInput??0)>.3)p.input={x:0,z:0,sprint:false};
    hurt(p,this.time);
-   const aim=Math.hypot(p.input.fx||0,p.input.fz||0);if(aim>.1&&!movementLocked(p,this.time))p.facing={x:p.input.fx/aim,z:p.input.fz/aim};
+   // Mouse aim turns only a Keeper standing idle; moving, dodging, hurt or busy Keepers keep their own heading.
+   const aim=Math.hypot(p.input.fx||0,p.input.fz||0);if(aim>.1&&Math.hypot(p.input.x,p.input.z)<=.1&&!actionActive(p,this.time)&&!(p.channel?.until>this.time))p.facing={x:p.input.fx/aim,z:p.input.fz/aim};
    for(const command of p.commands.splice(0)){p.commandSeq=command.seq;this.command(p,command.name??command);}
    resolveStrike(this,p);
    if(p.carriedBy)continue;
@@ -64,8 +64,10 @@ export class Game {
  command(p,command) {
   if(p.hp<=0||p.downedUntil>this.time||p.downedUntil&&this.difficulty==='eclipse')return;
   if(command==='dodge'){dodge(p,this.time,p.commandSeq,Math.hypot(p.input.x,p.input.z)>.1?p.input:p.facing);return;}
-  if(actionActive(p,this.time)&&command!=='channel-stop')return;
+  if(actionActive(p,this.time)&&command!=='channel-stop'&&!(command==='attack'&&attackCanInterrupt(p,this.time)))return;
   if(command==='emote'&&this.time>=(p.emoteReady||0)){p.emoteAt=this.time;p.emoteReady=this.time+4;}
+  // Attacks and powers go where the mouse points at the moment of the click, then the heading stays locked.
+  const aim=Math.hypot(p.input.fx||0,p.input.fz||0);if(aim>.1&&(command==='attack'||command.startsWith?.('ability-')))p.facing={x:p.input.fx/aim,z:p.input.fz/aim};
   const interacted = p.interactedAt;
   for(const system of this.systems)system.command?.(this,p,command);
   if(p.interactedAt !== interacted && !actionActive(p,this.time))beginAction(p,'interact','interact',this.time,p.commandSeq);

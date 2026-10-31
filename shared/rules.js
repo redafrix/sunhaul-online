@@ -13,7 +13,7 @@ export const MUTATORS={
  'mirror-world':{label:'Mirror World',description:'The entire map is reflected, including puzzles and routes.'}
 };
 export const cleanMutators=value=>Array.isArray(value)?[...new Set(value.filter(id=>Object.hasOwn(MUTATORS,id)))].slice(0,6):[];
-export function rulesFor(difficulty,mutators=[]){const id=Object.hasOwn(DIFFICULTIES,difficulty)?difficulty:'adventure',active=cleanMutators(mutators);return {...DIFFICULTIES[id],id,mutators:active,ropeMax:active.includes('short-ropes')?6:10,sunMass:active.includes('heavy-sun')?9:4,sunDamage:active.includes('glass-cannon-sun')?2.5:1,lightScale:active.includes('glass-cannon-sun')?1.25:1,night:DIFFICULTIES[id].night};}
+export function rulesFor(difficulty,mutators=[]){const id=Object.hasOwn(DIFFICULTIES,difficulty)?difficulty:'adventure',active=cleanMutators(mutators);return {...DIFFICULTIES[id],id,mutators:active,ropeMax:active.includes('short-ropes')?6:10,sunMass:active.includes('heavy-sun')?9:4,sunDamage:active.includes('glass-cannon-sun')?2.5:1,lightScale:active.includes('glass-cannon-sun')?1.25:1,sunHeat:id==='gentle'?.6:1,night:DIFFICULTIES[id].night};}
 export function configuredRecipe(recipe,mutators=[]){
  const active=cleanMutators(mutators);if(!active.includes('mirror-world')&&!active.includes('endless-night'))return recipe;
  const result=structuredClone(recipe);

@@ -1,7 +1,20 @@
 import { inPolygon,clamp } from '../../shared/map-math.js';
 import { distance } from '../../shared/rope-routing.js';
+// The Sun's fire burns Keepers who crowd it: full heat at its skin, none beyond HEAT_OUTER (rope haulers stay outside).
+const HEAT_OUTER=2.5,HEAT_INNER=1.6;
 export class SunSystems {
  constructor(){this.state={radiance:100,radius:18,mood:'curious',pulseUntil:0,gutterFor:0};}
+ before(game,dt){
+  for(const p of game.players.values()){
+   if(p.connected===false||p.downedUntil>0||!(p.hp>0))continue;
+   const sun=game.sunPositionFor(p),d=distance(p,sun);if(d>=HEAT_OUTER||!game.rules.sunHeat)continue;
+   const k=clamp((HEAT_OUTER-d)/(HEAT_OUTER-HEAT_INNER),0,1);p.burnUntil=game.time+.3;p.burn=Math.round(k*100)/100;
+   if(p.shieldUntil>game.time||p.dodgeUntil>game.time||p.abilityEvadeUntil>game.time)continue;
+   p.hp=Math.max(0,p.hp-dt*22*k*(p.hero==='brann'?.5:1)*game.rules.sunHeat);
+   // Burning hurts but never staggers: the hurt reaction compares against health after the burn.
+   if(game.health.has(p.id))game.health.set(p.id,p.hp);
+  }
+ }
  command(game,p,cmd) {
   const sun=game.sunPositionFor(p),state=game.sunStateFor(p);
   if(cmd==='pulse'&&state.radiance>=15&&game.time>state.pulseUntil+2){
@@ -22,8 +35,10 @@ export class SunSystems {
   const restored=(game.restored||[]).some(z=>{const zone=game.recipe.zones.find(a=>a.id===z.id);return zone?.poly?inPolygon(s.x,s.z,zone.poly):distance(s,z)<z.radius;});
   const well=game.recipe.entities.filter(e=>e.type==='well').filter((e,i)=>!['veteran','eclipse'].includes(game.difficulty)||i%2===0).some(e=>e.type==='well'&&distance(s,{x:e.p[0],z:e.p[1]})<(e.radius||3.5));
   const sanctuary=(game.effects||[]).some(e=>['bastion','grove'].includes(e.kind)&&distance(s,e)<e.radius&&e.until>game.time);
+  // A charging hearth holds the Sun steady: only the Shades gnawing it can dim it there.
+  const hearth=game.recipe.entities.some(e=>e.type==='cradle'&&game.machines?.[e.id]?.active&&!game.machines[e.id].complete&&distance(s,{x:e.p[0],z:e.p[1]})<2.6);
   const drain=game.rules.drain*(game.mutators.includes('endless-night')?1.25:1);
-  state.radiance=clamp(state.radiance+dt*(well?12:restored&&!game.mutators.includes('endless-night')?3:sanctuary?1:-drain),0,100);
+  state.radiance=clamp(state.radiance+dt*(well?12:restored&&!game.mutators.includes('endless-night')?3:sanctuary?1:hearth?0:-drain),0,100);
   state.gutterFor=state.radiance===0?state.gutterFor+dt:0;
   if(state.gutterFor>(game.difficulty==='eclipse'?10:25)){game.failed=true;game.failureReason='The Sun was extinguished for ten seconds.';}
   state.dim=(game.shades||[]).filter(a=>a.type==='moth'&&a.hp>0&&distance(a,s)<3).length;

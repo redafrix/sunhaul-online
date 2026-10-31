@@ -22,7 +22,7 @@ export class Puzzles {
   if(!e||!s||distance(p,at(e))>3.2||!this.ready(game,e)||p.downedUntil>game.time||!game.physics.lineOfSight(p,at(e)))return;
   if(['dial','runes'].includes(e.type)){
    if(slot==='submit'){
-    if(e.clues?.some(id=>!game.clues[id])){p.hint='Find the inscriptions first. AI Keepers share clues when they scout.';return;}
+    if(e.clues?.some(id=>!game.clues[id])){p.hint='Find the inscriptions first.';return;}
     if(s.values.every((v,i)=>v===e.code[i]))this.award(game,e);else{p.hint='The pattern does not match the mural.';s.mistakeAt=game.time;}
    }else if(/^\d+$/.test(slot)&&/^\d+$/.test(value)&&+slot<s.values.length&&+value<(e.symbols?.length||4))s.values[+slot]=+value;
   }

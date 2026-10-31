@@ -41,6 +41,11 @@ export function finaleCheckpoint(game) {
   game.physics.sunBody.setTranslation({ x: lens.p[0], y: lens.p[1] }, true);
   game.checkpoint = { x: lens.p[0], z: lens.p[1] + 2 };
 }
+// Local effect reviews only (SUNHAUL_DEV_FINALE=1): the Sun already sits inside the King's reach.
+export function arenaCheckpoint(game) {
+  game.physics.sunBody.setTranslation({ x: 0, y: kingZ(game) + 7 }, true);
+  game.checkpoint = { x: 0, z: kingZ(game) + 10 };
+}
 export class DrownedKing {
   constructor(game) {
     const e = game.recipe.boss;
@@ -177,7 +182,8 @@ export class DrownedKing {
   recover(game) {
     const s = this.state;
     s.metrics.resets++;
-    s.hp = s.maxHP * (1 - s.phase / 3);
+    // A dark Sun costs the crew time, not their progress: he regains only a little.
+    s.hp = Math.min(s.maxHP * (1 - s.phase / 3), s.hp + s.maxHP * 0.08);
     s.attack = null;
     s.retreatUntil = game.time + 4;
     s.z = this.spec.p[1] - 3;

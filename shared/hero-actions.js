@@ -38,7 +38,13 @@ const SUPPORT_ACTIONS = {
 const hitMarkers = { brann: [.53, .49, .35], mara: [.53, .53, .53], sera: [.52, .4, .35] };
 for (const [hero, actions] of Object.entries(HERO_ACTIONS)) {
   Object.assign(actions, SUPPORT_ACTIONS);
-  for (let index = 1; index <= 3; index++) actions[`attack${index}`].hit = hitMarkers[hero][index - 1];
+  for (let index = 1; index <= 3; index++) {
+    const attack = actions[`attack${index}`];
+    attack.hit = hitMarkers[hero][index - 1];
+    // Snappier swings (22 % faster clips) that keep the damage their full-length timing gave.
+    attack.power = attack.seconds / .55;
+    attack.seconds *= .78;
+  }
   for (const slot of ['Q', 'E', 'R']) actions[`cast${slot}`].seconds *= 1.2;
 }
 
@@ -51,6 +57,15 @@ export function dodgeSpeed(player, now = player.time) {
 
 export function actionActive(player, now = player.time || 0) {
   return player.action && player.action.until > now;
+}
+
+// Attacks take priority: they cut a hurt reaction after a short flinch, and chain once the previous blow has landed.
+export function attackCanInterrupt(player, now = player.time || 0) {
+  if (!actionActive(player, now)) return true;
+  const a = player.action;
+  if (a.kind === 'hurt') return now - a.at >= .25;
+  if (a.kind === 'attack') return now >= a.at + a.seconds * (HERO_ACTIONS[player.hero]?.[a.motion]?.hit ?? 1) + .08;
+  return false;
 }
 
 export function movementLocked(player, now = player.time || 0) {
@@ -103,6 +118,15 @@ export function predictAction(player, packet, recipe, snapshot) {
       dodge(player, now, packet.seq, Math.hypot(packet.x, packet.z) > .1 ? packet : player.facing);
       continue;
     }
+    if (command === 'attack' && attackCanInterrupt(player, now) && now >= (player.attackReady || 0)) {
+      const combo = (player.attackCombo || 0) % 3 + 1;
+      const action = beginAction(player, 'attack', `attack${combo}`, now, packet.seq);
+      if (action) {
+        player.attackCombo = combo;
+        player.attackReady = now + action.seconds * HERO_ACTIONS[player.hero][action.motion].hit + .08;
+      }
+      continue;
+    }
     if (actionActive(player, now)) continue;
     if (command === 'interact' && recipe && snapshot) {
       const ally = snapshot.players?.some(other => other.id !== player.id
@@ -113,14 +137,6 @@ export function predictAction(player, packet, recipe, snapshot) {
         && snapshot.machines?.[entity.id]
         && Math.hypot(player.x - entity.p[0], player.z - entity.p[1]) < (entity.type === 'cradle' ? 6 : 3.2));
       if (ally || machine) beginAction(player, ally ? 'revive' : 'interact', ally ? 'revive' : 'interact', now, packet.seq);
-    }
-    if (command === 'attack' && now >= (player.attackReady || 0)) {
-      const combo = (player.attackCombo || 0) % 3 + 1;
-      const action = beginAction(player, 'attack', `attack${combo}`, now, packet.seq);
-      if (action) {
-        player.attackCombo = combo;
-        player.attackReady = action.until;
-      }
     }
     if (command.startsWith('ability-')) {
       const slot = command.slice(8).toUpperCase();

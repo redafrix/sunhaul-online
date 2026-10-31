@@ -1,35 +1,37 @@
 // Authoritative target selection, bounded lunges and dodgeable enemy wind-ups.
-import { beginAction, actionActive, HERO_ACTIONS } from "../../shared/hero-actions.js";
+import { beginAction, actionActive, attackCanInterrupt, HERO_ACTIONS } from "../../shared/hero-actions.js";
 import { distance } from "../../shared/rope-routing.js";
-export function nearestEnemy(game, p, range, cone = false) {
+export function nearestEnemy(game, p, range, cone = false, minDot = 0.5) {
   return [...game.shades,...(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated&&!game.boss.dyingAt?[game.boss]:[])]
     .filter(
       (s) =>
         s.hp > 0 &&
         distance(p, s) <= range + (s.kind==='drownedKing'?2.5:0) &&
-        game.physics.lineOfSight(p, s) &&
+        // Point-blank blows reach over crates and low clutter; longer swings need a clear line.
+        (distance(p, s) < 2.6 || game.physics.lineOfSight(p, s)) &&
         (!cone || s.kind==='drownedKing' ||
           distance(p, s) < 0.1 ||
           ((s.x - p.x) * p.facing.x + (s.z - p.z) * p.facing.z) /
             distance(p, s) >=
-            0.5),
+            minDot),
     )
     .sort((a, b) => distance(p, a) - distance(p, b))[0];
 }
 export function strike(game, p) {
   if (p.pendingStrike?.at <= game.time) resolveStrike(game, p);
   if (game.time < (p.attackReady || 0) || p.downedUntil > game.time) return;
-  if (actionActive(p, game.time)) return;
+  if (actionActive(p, game.time) && !attackCanInterrupt(p, game.time)) return;
   p.attackCombo = (p.attackCombo || 0) % 3 + 1;
   const action = beginAction(p, 'attack', `attack${p.attackCombo}`, game.time, p.commandSeq);
   p.attackAt = game.time;
-  p.attackReady = action?.until ?? game.time + .55;
-  const target = nearestEnemy(game, p, 3.5, true);
+  p.attackReady = action ? game.time + action.seconds * HERO_ACTIONS[p.hero][action.motion].hit + .08 : game.time + .55;
+  // Swings snap to the nearest foe within a wide arc so a click slightly off target still connects.
+  const target = nearestEnemy(game, p, 3.8, true, 0);
   if (target) {
     const length = distance(p, target) || 1;
     p.facing = { x: (target.x - p.x) / length, z: (target.z - p.z) / length };
   }
-  p.pendingStrike = { at: action ? game.time + action.seconds * HERO_ACTIONS[p.hero][action.motion].hit : p.attackReady, action: action?.id, power: action ? action.seconds / .55 : 1 };
+  p.pendingStrike = { at: action ? game.time + action.seconds * HERO_ACTIONS[p.hero][action.motion].hit : p.attackReady, action: action?.id, power: action ? HERO_ACTIONS[p.hero][action.motion].power ?? action.seconds / .55 : 1 };
   if (!action) resolveStrike(game, p, true);
   return true;
 }
@@ -39,15 +41,14 @@ export function resolveStrike(game, p, immediate = false) {
   if (!pending || !immediate && game.time < pending.at) return;
   p.pendingStrike = null;
   if (pending.action && p.action?.id !== pending.action || p.downedUntil > game.time) return;
-  const target = nearestEnemy(game, p, 3.5, true);
+  const target = nearestEnemy(game, p, 3.8, true, 0.2);
   const dx = p.facing.x;
   const dz = p.facing.z;
   p.attackTarget = target?.id || null;
   if (target?.kind === 'drownedKing') {
     game.damageBoss(p,Math.round(14 * pending.power));
   } else if (target) {
-    // Sunlit Shades are exposed and take heavier blows.
-    target.hp -= Math.round((target.type === "brute" ? 13 : 18) * pending.power * (target.litUntil > game.time ? 1.35 : 1));
+    target.hp -= Math.round((target.type === "brute" ? 16 : 18) * pending.power);
     target.hitAt = game.time;
     target.stunUntil = Math.max(target.stunUntil, game.time + 0.18);
     target.knock = { x: dx * 2, z: dz * 2 };

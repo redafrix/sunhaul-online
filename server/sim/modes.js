@@ -37,7 +37,6 @@ export class Modes {
  before(game,dt){
   if(this.kind==='sun-race'){
    const teams=TEAMS.map(team=>[...game.players.values()].filter(p=>p.team===team&&p.connected!==false));
-   this.state.soloAvailable=this.state.phase==='waiting'&&game.time>=5&&teams.flat().filter(p=>!p.bot).length===1;
    if(this.state.phase==='waiting'&&teams.every(t=>t.length===game.teamSize)){this.state.phase='racing';this.state.startedAt=game.time;}
    if(this.state.phase==='waiting')for(const p of game.players.values()){p.input={x:0,z:0};p.commands=[];}
    if(this.state.phase==='racing'){this.state.remaining=Math.max(0,480-(game.time-this.state.startedAt));for(const p of game.players.values())p.racePull=(p.haulUntil>game.time?1.6:1)*(p.raceRival?.82:1);}

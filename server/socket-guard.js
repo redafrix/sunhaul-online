@@ -9,7 +9,7 @@ const strings = [
   "name",
   "difficulty",
 ];
-const numbers = ["teamSize", "aiKeepers"];
+const numbers = ["teamSize"];
 const callbacksOnly = new Set([
   "restart_mission",
   "return_sun",

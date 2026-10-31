@@ -4,8 +4,7 @@ import {strike,enemyStrike} from './combat.js';
 import { seeded,terrainHeight,segmentDistance } from '../../shared/map-math.js';
 import { distance } from '../../shared/rope-routing.js';
 import RAPIER from '@dimforge/rapier2d-compat';
-// Sunlight only scorches (hp/s) and exposes Shades; Keepers finish them.
-const SCORCH={wisp:4,lurker:2.5,brute:3,moth:.8,weaver:3,hound:3};
+// Sunlight never hurts Shades (they only keep to its edge); Keepers finish them.
 const stats={wisp:{hp:30,speed:3.1,radius:.26},lurker:{hp:65,speed:3.2,radius:.48},brute:{hp:150,speed:1.6,radius:.95},moth:{hp:40,speed:3.8,radius:.3},weaver:{hp:90,speed:2.2,radius:.6},hound:{hp:42,speed:4.2,radius:.4}};
 export class Shades {
  constructor(game){this.shades=[];this.deaths=[];this.webs=[];this.random=seeded(game.recipe.seed+47);this.serial=0;this.spawns=(game.recipe.shadeSpawns||[]).map(s=>({...s,next:s.delay??1}));game.shades=this.shades;game.webs=this.webs;}
@@ -18,12 +17,16 @@ export class Shades {
   const sun=game.physics.snapshot().sun,radius=game.sun?.radius||18,gentle=game.difficulty==='gentle';
   for(const spawn of this.spawns){if(game.boss?.active)continue;const zoneIndex=game.recipe.mission?.zoneOrder?.indexOf(spawn.zone)??0;if(zoneIndex>(game.restored||[]).length)continue
 const opened=zoneIndex>0?game.restored?.[zoneIndex-1]?.at:undefined
-if(opened!==undefined&&game.time<opened+(spawn.grace??20))continue;if((game.restored||[]).some(z=>z.id===spawn.zone)||game.time<spawn.next)continue;spawn.next=game.time+(spawn.interval||40);const count=Math.max(1,Math.ceil((spawn.count||5)*game.rules.shadeCount*(.7+.3*game.keeperCount())));for(let i=0;i<count&&this.shades.length<48;i++){const a=this.random()*Math.PI*2,r=this.random()*(spawn.radius||3),x=spawn.p[0]+Math.cos(a)*r,z=spawn.p[1]+Math.sin(a)*r;if(terrainHeight(game.recipe,x,z)>(game.recipe.water?.level??-1))this.spawn(game,game.difficulty==='eclipse'&&i%3===0?'brute':game.difficulty==='veteran'&&spawn.type==='wisp'&&i%2===0?'lurker':spawn.type,x,z,spawn.zone);}}
+if(opened!==undefined&&game.time<opened+(spawn.grace??20))continue;if((game.restored||[]).some(z=>z.id===spawn.zone)||game.time<spawn.next)continue;spawn.next=game.time+(spawn.interval||40);const count=Math.max(1,Math.ceil((spawn.count||5)*game.rules.shadeCount*(.7+.3*game.keeperCount())));
+// A district holds at most 6 roaming Shades (2 more per extra Keeper); its spawners wait while that many still stand.
+if(this.shades.filter(v=>v.zone===spawn.zone&&v.hp>0&&!v.wave).length+count>4+2*game.keeperCount()){spawn.next=game.time+6;continue;}for(let i=0;i<count&&this.shades.length<48;i++){const a=this.random()*Math.PI*2,r=this.random()*(spawn.radius||3),x=spawn.p[0]+Math.cos(a)*r,z=spawn.p[1]+Math.sin(a)*r;if(terrainHeight(game.recipe,x,z)>(game.recipe.water?.level??-1))this.spawn(game,game.difficulty==='eclipse'&&i%3===0?'brute':game.difficulty==='veteran'&&spawn.type==='wisp'&&i%2===0?'lurker':spawn.type,x,z,spawn.zone);}}
   if(game.sun?.radiance===0&&game.tick%180===0&&this.shades.length<48){const a=this.random()*Math.PI*2;this.spawn(game,'wisp',sun.x+Math.cos(a)*radius*1.3,sun.z+Math.sin(a)*radius*1.3);}
   for(const p of game.players.values()){p.hp??=100;if(p.hp<=0&&!(p.downedUntil>0)){p.downedUntil=game.time+(game.keeperCount()===1?3:8);p.rope.attached=false;}
    if(p.downedUntil>game.time||p.downedUntil&&game.difficulty==='eclipse'){p.input={x:0,z:0};p.vx=p.vz=0;}
    else if(p.downedUntil&&game.difficulty!=='eclipse'){const ownSun=game.sunPositionFor(p),at=game.safeSpawn(ownSun);p.body.setTranslation({x:at.x,y:at.z},true);p.hp=60;p.downedUntil=0;clearActions(p);beginAction(p,'getUp','getUp',game.time);p.shieldUntil=p.action.until;game.physics.sync(p);}
   }
+  // At most two Shades at a time can gnaw the Sun's radiance; a crowd waits its turn.
+  let gnawing=0;
   for(const s of this.shades){const nearestSun=game.recipe.mode==='sun-race'?['dawn','dusk'].map(team=>({team,...game.sunPositionFor({team})})).sort((a,b)=>distance(s,a)-distance(s,b))[0]:null,sun=nearestSun||game.sunPositionFor(),sunState=game.sunStateFor(nearestSun),radius=sunState.radius||18;if(s.hp<=0){s.vx=s.vz=0;continue;}if(s.spawnUntil>game.time){s.vx=s.vz=0;continue;}if(s.knockUntil>game.time){game.physics.move(s,{x:s.knock.x*dt,z:s.knock.z*dt});continue;}if(s.stunUntil>game.time){s.vx=s.vz=0;continue;}
    if(s.type==='weaver'&&game.time>=(s.webAt??game.time)){s.webAt=game.time+16;this.spin(game,s);}
    let target=sun;const d=distance(s,sun),players=[...game.players.values()].filter(p=>p.connected!==false&&!p.downedUntil),nearest=players.sort((a,b)=>distance(s,a)-distance(s,b))[0];
@@ -42,11 +45,10 @@ if(opened!==undefined&&game.time<opened+(spawn.grace??20))continue;if((game.rest
    enemyStrike(game,s,nearest);
    const attacking=s.strikePending||game.time<(s.windupUntil||0)+.25;
    if(attacking)target=s.attackTarget||target;
-   const dx=target.x-s.x,dz=target.z-s.z,len=Math.hypot(dx,dz)||1,speed=(attacking||s.biting)?0:stats[s.type].speed*game.rules.shadeSpeed*(s.litUntil>game.time?.7:1);
+   const dx=target.x-s.x,dz=target.z-s.z,len=Math.hypot(dx,dz)||1,speed=(attacking||s.biting)?0:stats[s.type].speed*game.rules.shadeSpeed;
    s.vx=dx/len*speed;s.vz=dz/len*speed;if(!attacking)s.facing={x:dx/len,z:dz/len};game.physics.move(s,{x:s.vx*dt,z:s.vz*dt});
-   if(d<radius&&game.physics.lineOfSight(sun,s)){s.litUntil=game.time+.3;if(s.type!=='brute'||s.wave)s.hp-=dt*(s.boss?5:SCORCH[s.type]??2);}
    const bastion=game.effects?.some(e=>e.kind==='bastion'&&e.until>game.time&&distance(sun,e)<e.radius);
-   if(d<2.2&&!bastion)sunState.radiance=Math.max(0,sunState.radiance-dt*(s.type==='brute'?6:3)*game.rules.sunDamage*game.rules.shadeDamage*(.8+.2*game.keeperCount())*(gentle?.35:1));
+   if(d<2.2&&!bastion&&gnawing++<2)sunState.radiance=Math.max(0,sunState.radiance-dt*(s.type==='brute'?2.6:1.8)*game.rules.sunDamage*game.rules.shadeDamage*(.8+.2*game.keeperCount())*(gentle?.35:1));
    for(const beam of game.beams||[])if(segmentDistance(s.x,s.z,[beam.a.x,beam.a.z],[beam.b.x,beam.b.z])<1.1)s.hp-=dt*(s.type==='brute'?45:65);
    for(const effect of game.effects||[])if(effect.until>game.time&&['bastion','grove'].includes(effect.kind)&&distance(s,effect)<effect.radius){s.stunUntil=game.time+.2;s.vx=s.vz=0;}
   }

@@ -1,10 +1,11 @@
-// Persistent mission routes share the authoritative navigator used by Pathfinder.
+// Persistent mission routes from the authoritative navigator (also shown by Pathfinder).
 import { missionObjective } from '../../shared/mission-flow.js';
 import { segmentDistance } from '../../shared/map-math.js';
+import { Navigation } from './navigation.js';
 export class Guidance {
  after(game) {
   if (game.recipe.mode) return;
-  const player = [...game.players.values()].find(p => !p.bot && p.connected !== false);
+  const player = [...game.players.values()].find(p => p.connected !== false);
   if (!player) return;
   const sun = game.sunPositionFor(player);
   const guide = missionObjective(game.recipe, {...game, sun}, player);
@@ -12,7 +13,8 @@ export class Guidance {
    game.guidance = null;
    return;
   }
-  const nav = game.systems.find(s => s.navigation).navigation;
+  this.navigation ??= new Navigation(game.recipe, game.catalog);
+  const nav = this.navigation;
   const key = `${game.runId}:${guide.index}:${guide.target.id}`;
   if (this.key !== key) {
    this.key = key;

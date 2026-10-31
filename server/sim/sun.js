@@ -7,10 +7,13 @@ export class SunSystems {
  before(game,dt){
   for(const p of game.players.values()){
    if(p.connected===false||p.downedUntil>0||!(p.hp>0))continue;
-   const sun=game.sunPositionFor(p),d=distance(p,sun);if(d>=HEAT_OUTER||!game.rules.sunHeat)continue;
+   const sun=game.sunPositionFor(p),d=distance(p,sun),inside=d<HEAT_OUTER&&game.rules.sunHeat;
+   // Heat builds over about half a second: brushing past costs little, standing in the fire burns hard.
+   p.sunHeat=clamp((p.sunHeat||0)+dt*(inside?2:-3),0,1);
+   if(!inside)continue;
    const k=clamp((HEAT_OUTER-d)/(HEAT_OUTER-HEAT_INNER),0,1);p.burnUntil=game.time+.3;p.burn=Math.round(k*100)/100;
    if(p.shieldUntil>game.time||p.dodgeUntil>game.time||p.abilityEvadeUntil>game.time)continue;
-   p.hp=Math.max(0,p.hp-dt*22*k*(p.hero==='brann'?.5:1)*game.rules.sunHeat);
+   p.hp=Math.max(0,p.hp-dt*22*k*p.sunHeat*(p.hero==='brann'?.5:1)*game.rules.sunHeat);
    // Burning hurts but never staggers: the hurt reaction compares against health after the burn.
    if(game.health.has(p.id))game.health.set(p.id,p.hp);
   }

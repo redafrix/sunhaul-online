@@ -15,8 +15,17 @@ export function createAnalytics(traffic) {
     state = { ...state, ...saved, sessions: saved.sessions || [], days: saved.days || {} };
     if (saved.traffic) traffic.restore?.(saved.traffic);
   };
-  try { merge(JSON.parse(readFileSync(FILE, 'utf8'))); } catch {
-    fetch(SNAPSHOT, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(merge).catch(() => {});
+  // Until the saved history is back, report restored:false so the snapshot job never overwrites it with an empty state.
+  let restored = false;
+  const restore = (attempt = 0) => fetch(SNAPSHOT, { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : r.status === 404 ? null : Promise.reject(new Error(String(r.status)))))
+    .then((saved) => { merge(saved); restored = true; })
+    .catch(() => { if (attempt < 20) setTimeout(() => restore(attempt + 1), 15000).unref(); });
+  try {
+    merge(JSON.parse(readFileSync(FILE, 'utf8')));
+    restored = true;
+  } catch {
+    restore();
   }
   const today = () => (state.days[day()] ??= { visitors: [], sessions: 0, seconds: 0 });
   function end(socket) {
@@ -55,7 +64,7 @@ export function createAnalytics(traffic) {
     report() {
       const now = Date.now();
       const current = [...live.values()].map(s => ({ ...s, seconds: Math.round((now - s.start) / 1000), live: true }));
-      return { since: state.since, now, visitors: state.visitors, days: state.days, sessions: [...state.sessions.slice(-300), ...current], online: current.length, traffic: traffic.snapshot?.() };
+      return { restored, since: state.since, now, visitors: state.visitors, days: state.days, sessions: [...state.sessions.slice(-300), ...current], online: current.length, traffic: traffic.snapshot?.() };
     },
   };
 }

@@ -13,7 +13,10 @@ jobs:
       - name: Fetch and commit
         run: |
           curl -fsS --max-time 60 https://sunhaul-online-artr.onrender.com/stats.json -o stats.json || exit 0
-          python3 -c "import json;d=json.load(open('stats.json'));assert 'visitors' in d" || exit 0
+          python3 -c "import json;d=json.load(open('stats.json'));assert 'visitors' in d and d.get('restored') is True" || exit 0
+          # Never replace the saved history with a smaller one (a restart that has not restored yet).
+          curl -fsS --max-time 60 https://raw.githubusercontent.com/${{ github.repository }}/stats-data/stats.json -o old.json || echo '{}' > old.json
+          python3 -c "import json;n=json.load(open('stats.json'));o=json.load(open('old.json'));v=lambda d:sum(x.get('visits',0) for x in d.get('visitors',{}).values());assert v(n)>=v(o) or (n.get('traffic') or {}).get('month')!=(o.get('traffic') or {}).get('month')" || exit 0
           git init -q snap && mv stats.json snap/ && cd snap
           git config user.name stats-bot && git config user.email stats-bot@users.noreply.github.com
           git checkout -q -b stats-data && git add stats.json && git commit -qm "stats $(date -u +%FT%TZ)"

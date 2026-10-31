@@ -1,19 +1,23 @@
 // Authoritative target selection, bounded lunges and dodgeable enemy wind-ups.
 import { beginAction, actionActive, attackCanInterrupt, HERO_ACTIONS } from "../../shared/hero-actions.js";
 import { distance } from "../../shared/rope-routing.js";
+// Weapon reach from the Keeper's centre to the foe's: Brann's hammer is longest, Sera's blades shortest.
+// Big bodies are hit at their edge, so brutes and the King add their size.
+export const HERO_REACH = { brann: 2.7, mara: 2.5, sera: 2.3 };
+const bodySize = (s) => s.kind === 'drownedKing' ? 2.5 : s.type === 'brute' ? 0.4 : 0;
 export function nearestEnemy(game, p, range, cone = false, minDot = 0.5) {
   return [...game.shades,...(game.boss?.kind==='drownedKing'&&game.boss.active&&!game.boss.defeated&&!game.boss.dyingAt?[game.boss]:[])]
     .filter(
       (s) =>
         s.hp > 0 &&
-        distance(p, s) <= range + (s.kind==='drownedKing'?2.5:0) &&
+        distance(p, s) <= range + bodySize(s) &&
         // Point-blank blows reach over crates and low clutter; longer swings need a clear line.
         (distance(p, s) < 2.6 || game.physics.lineOfSight(p, s)) &&
-        (!cone || s.kind==='drownedKing' ||
+        (!cone ||
           distance(p, s) < 0.1 ||
           ((s.x - p.x) * p.facing.x + (s.z - p.z) * p.facing.z) /
             distance(p, s) >=
-            minDot),
+            (s.kind === 'drownedKing' ? Math.min(minDot, 0) : minDot)),
     )
     .sort((a, b) => distance(p, a) - distance(p, b))[0];
 }
@@ -25,8 +29,10 @@ export function strike(game, p) {
   const action = beginAction(p, 'attack', `attack${p.attackCombo}`, game.time, p.commandSeq);
   p.attackAt = game.time;
   p.attackReady = action ? game.time + action.seconds * HERO_ACTIONS[p.hero][action.motion].hit + .08 : game.time + .55;
-  // Swings snap to the nearest foe within a wide arc so a click slightly off target still connects.
-  const target = nearestEnemy(game, p, 3.8, true, 0);
+  // Swings snap to the nearest foe within about 55 degrees of where the Keeper aims, so a click slightly off still connects.
+  // Touch and gamepad players without an aim swing where they face, so they get the whole front half.
+  const aimed = Math.hypot(p.input?.fx || 0, p.input?.fz || 0) > .1;
+  const target = nearestEnemy(game, p, HERO_REACH[p.hero] ?? 2.5, true, aimed ? 0.57 : 0);
   if (target) {
     const length = distance(p, target) || 1;
     p.facing = { x: (target.x - p.x) / length, z: (target.z - p.z) / length };
@@ -41,7 +47,8 @@ export function resolveStrike(game, p, immediate = false) {
   if (!pending || !immediate && game.time < pending.at) return;
   p.pendingStrike = null;
   if (pending.action && p.action?.id !== pending.action || p.downedUntil > game.time) return;
-  const target = nearestEnemy(game, p, 3.8, true, 0.2);
+  // The blow lands in front: a little more slack than the snap, for a foe that moved during the wind-up.
+  const target = nearestEnemy(game, p, (HERO_REACH[p.hero] ?? 2.5) + 0.2, true, 0.42);
   const dx = p.facing.x;
   const dz = p.facing.z;
   p.attackTarget = target?.id || null;
